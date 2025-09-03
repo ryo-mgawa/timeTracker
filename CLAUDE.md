@@ -137,3 +137,80 @@ t-wadaのTDD準拠
 - **ログイン機能**: Row Level Security (RLS)で認証基盤を準備
 - **権限管理**: Role-Basedアクセス制御の実装準備
 - **メタデータ拡張**: JSONBカラムでの柔軟な拡張対応
+
+## 実装済み機能
+
+### 完了済み（✅）
+- **データベース設計**: Supabase + Prisma ORM完全セットアップ
+- **Clean Architectureの基盤**: Domain、Application、Infrastructure、Presentation層の実装
+- **基本CRUD操作**: User, Project, Category, Task, TimeEntry の完全なAPI実装
+- **カレンダーUI**: react-big-calendarベースの直感的な工数入力インターフェース
+- **ドラッグ&ドロップ**: 15分刻み制約付きの時間調整機能
+- **レポート機能**: プロジェクト別・分類別・日別・詳細レポートの実装
+- **ユーザー選択**: 動的ユーザー選択によるマルチユーザー対応
+- **React Router**: SPA対応の完全なルーティング機能
+
+### 次期実装予定TODOリスト（優先度順）
+
+#### Phase 1: セキュリティ・認証基盤 🔐
+1. **ユーザー認証機能の実装** [高優先度]
+   - Supabase Authを使用したログイン/サインアップ機能
+   - JWTトークンベースの認証システム
+   - パスワードリセット機能
+
+2. **権限管理とRLS（Row Level Security）の実装** [高優先度]  
+   - Supabase RLS有効化
+   - ユーザー単位のデータアクセス制御
+   - 管理者権限の階層設計
+
+#### Phase 2: データ管理・分析機能 📊
+3. **工数データのエクスポート機能** [中優先度]
+   - CSV/Excel/JSON形式での一括エクスポート
+   - 期間・プロジェクト・ユーザー指定でのフィルタリング
+   - 集計データの可視化（チャート機能）
+
+4. **通知機能（工数入力リマインダー等）** [中優先度]
+   - ブラウザ通知APIを使用したリマインダー機能  
+   - 日次/週次レポートのメール送信（Supabase Edge Functions使用）
+   - 工数未入力日の検出とアラート
+
+#### Phase 3: UI/UX改善 📱
+5. **モバイル対応（レスポンシブデザイン）** [中優先度]
+   - Bootstrap 5によるモバイル最適化
+   - タッチデバイス向けのドラッグ&ドロップ操作改善
+   - PWA（Progressive Web App）対応検討
+
+6. **パフォーマンス最適化（React.memo、useMemo等）** [低優先度]
+   - レンダリング最適化による高速化
+   - 大量データ対応のための仮想スクロール実装
+   - バンドルサイズ最適化とCode Splitting
+
+## 技術的な実装ガイドライン
+
+### 認証実装時の注意点
+- **Supabase Auth**: `@supabase/auth-helpers-react`を使用
+- **Protected Routes**: HOCでの認証チェック実装
+- **Token管理**: ローカルストレージではなくhttpOnlyCookieを推奨
+
+### RLS実装パターン
+```sql
+-- 例：ユーザー単位のプロジェクトアクセス制御
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own projects" ON projects
+    FOR SELECT USING (auth.uid()::text = user_id);
+
+CREATE POLICY "Users can insert own projects" ON projects
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+```
+
+### エクスポート機能の技術選択肢
+- **CSVエクスポート**: `react-csv`ライブラリ
+- **Excelエクスポート**: `xlsx`ライブラリ  
+- **チャート**: `Chart.js` or `Recharts`
+- **大量データ処理**: Web Worker活用
+
+### 通知機能の実装方針
+- **ブラウザ通知**: Notification API + Service Worker
+- **メール通知**: Supabase Edge Functions + Resend API
+- **リマインダー**: `cron`パターンでの定期実行

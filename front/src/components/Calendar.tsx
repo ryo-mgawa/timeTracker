@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Calendar, momentLocalizer, View } from 'react-big-calendar';
 import withDragAndDrop, { 
   withDragAndDropProps 
@@ -10,6 +10,9 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import '../styles/calendar.css';
 import { TimeEntry, User, Task, Category } from 'types';
 import { timeEntryService } from 'services/timeEntryService';
+import { taskService } from 'services/taskService';
+import { projectService } from 'services/projectService';
+import { categoryService } from 'services/categoryService';
 
 // moment.jsの日本語設定
 moment.locale('ja');
@@ -68,6 +71,77 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
   const [currentView, setCurrentView] = useState<View>('week');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState<boolean>(false);
+
+  // 初期データ取得
+  useEffect(() => {
+    const fetchInitialData = async (): Promise<void> => {
+      // アーリーリターン - ユーザー情報がない場合
+      if (!user?.id) {
+        console.warn('ユーザー情報がありません');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        
+        // TimeEntry一覧を取得
+        const timeEntries = await timeEntryService.getTimeEntriesByUserId(user.id);
+        
+        // 各TimeEntryのタスク、プロジェクト、分類情報を並行取得
+        const calendarEvents: CalendarEvent[] = await Promise.all(
+          timeEntries.map(async (entry) => {
+            try {
+              // 並行してタスクと分類情報を取得
+              const [task, category] = await Promise.all([
+                taskService.getTaskById(user.id, entry.taskId),
+                categoryService.getCategoryById(user.id, entry.categoryId)
+              ]);
+              
+              // タスクからプロジェクト情報を取得
+              const project = await projectService.getProjectById(user.id, task.projectId);
+              
+              // タイトルを構築: {プロジェクト名}-{タスク名}
+              const title = `${project.name}-${task.name}`;
+              
+              return {
+                id: entry.id,
+                title,
+                start: entry.startTime,
+                end: entry.endTime,
+                resource: {
+                  timeEntry: entry,
+                  task,
+                  category
+                }
+              };
+            } catch (error) {
+              console.error(`Failed to fetch details for TimeEntry ${entry.id}:`, error);
+              // エラー時はフォールバック表示
+              return {
+                id: entry.id,
+                title: '工数エントリ（詳細取得エラー）',
+                start: entry.startTime,
+                end: entry.endTime,
+                resource: {
+                  timeEntry: entry,
+                  task: { id: entry.taskId, name: 'タスク名', description: '' } as any,
+                  category: { id: entry.categoryId, name: '分類名', color: '#007bff' } as any
+                }
+              };
+            }
+          })
+        );
+        
+        setEvents(calendarEvents);
+      } catch (error) {
+        console.error('初期データの取得に失敗しました:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [user?.id]);
 
   // イベント移動時のハンドラー
   const onEventDrop = useCallback(async ({ event, start, end }: any) => {
@@ -373,8 +447,8 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
         formats={formats as any}
         step={15}
         timeslots={4}
-        min={new Date(0, 0, 0, 8, 0, 0)}
-        max={new Date(0, 0, 0, 20, 0, 0)}
+        min={new Date(0, 0, 0, 0, 0, 0)}
+        max={new Date(0, 0, 0, 23, 59, 59)}
         defaultView="week"
         views={['month', 'week', 'day']}
         popup={true}
