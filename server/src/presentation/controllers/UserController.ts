@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { MockUserRepository } from '../../infrastructure/repositories/MockUserRepository';
+import { PrismaClient } from '../../generated/prisma';
+import { RealUserRepository } from '../../infrastructure/repositories/RealUserRepository';
 import { User } from '../../domain/entities/User';
 import { ApiResponse } from '../../shared/types/common';
 
@@ -18,7 +19,7 @@ interface CreateUserRequest {
 }
 
 export class UserController {
-  constructor(private userRepository: MockUserRepository) {}
+  constructor(private userRepository: RealUserRepository) {}
 
   // ユーザー一覧取得
   async getUsers(_req: Request, res: Response): Promise<void> {
@@ -155,5 +156,6 @@ export class UserController {
 }
 
 // インスタンス化してエクスポート
-const userRepository = new MockUserRepository();
+const prisma = new PrismaClient();
+const userRepository = new RealUserRepository(prisma);
 export const userController = new UserController(userRepository);
