@@ -408,7 +408,7 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     }
     
     // プロジェクトの色を基調に、分類の色をアクセントとして使用
-    const { task, category, project } = calendarEvent.resource;
+    const { category, project } = calendarEvent.resource;
     const projectColor = project?.color || '#667eea'; // プロジェクトの色
     const categoryColor = category.color || '#28a745';
     
@@ -462,6 +462,7 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
         timeslots={4}
         min={new Date(0, 0, 0, 0, 0, 0)}
         max={new Date(0, 0, 0, 23, 59, 59)}
+        scrollToTime={new Date(0, 0, 0, 9, 0, 0)}
         defaultView="week"
         views={['month', 'week', 'day']}
         popup={true}
