@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { UserId } from '../../shared/types/common';
 
 // 値オブジェクトの定義
@@ -144,9 +145,9 @@ export class User {
     return this.deletedAt !== undefined;
   }
 
-  // IDの生成（実際の実装では外部ライブラリを使用）
+  // IDの生成（UUID v4使用）
   private static generateUserId(): UserId {
-    return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 
   // 等価性チェック

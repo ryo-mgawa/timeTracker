@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { TimeEntryId, TaskId, CategoryId, UserId } from '../../shared/types/common';
 import { TimePeriod } from '../value-objects/TimePeriod';
 
@@ -157,9 +158,9 @@ export class TimeEntry {
     return this.period.overlaps(other.period);
   }
 
-  // IDの生成
+  // IDの生成（UUID v4使用）
   private static generateTimeEntryId(): TimeEntryId {
-    return `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 
   // 等価性チェック

@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { CategoryId, UserId } from '../../shared/types/common';
 
 // 分類名の値オブジェクト
@@ -186,9 +187,9 @@ export class Category {
     return !this.isDeleted();
   }
 
-  // IDの生成
+  // IDの生成（UUID v4使用）
   private static generateCategoryId(): CategoryId {
-    return `category_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 
   // 等価性チェック

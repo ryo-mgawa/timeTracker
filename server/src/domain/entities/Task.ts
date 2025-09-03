@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { TaskId, ProjectId, UserId } from '../../shared/types/common';
 
 // タスク名の値オブジェクト
@@ -194,9 +195,9 @@ export class Task {
     return this.belongsToUser(userId) && this.belongsToProject(projectId);
   }
 
-  // IDの生成
+  // IDの生成（UUID v4使用）
   private static generateTaskId(): TaskId {
-    return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 
   // 等価性チェック

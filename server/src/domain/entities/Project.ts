@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { ProjectId, UserId } from '../../shared/types/common';
 
 // プロジェクト名の値オブジェクト
@@ -181,9 +182,9 @@ export class Project {
     return this.userId === userId;
   }
 
-  // IDの生成
+  // IDの生成（UUID v4使用）
   private static generateProjectId(): ProjectId {
-    return `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 
   // 等価性チェック
