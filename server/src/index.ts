@@ -2,6 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import userRoutes from './presentation/routes/userRoutes';
+import projectRoutes from './presentation/routes/projectRoutes';
+import categoryRoutes from './presentation/routes/categoryRoutes';
+import taskRoutes from './presentation/routes/taskRoutes';
+import timeEntryRoutes from './presentation/routes/timeEntryRoutes';
 
 // ポート設定（マジックナンバー対応）
 const DEFAULT_PORT = 3001;
@@ -36,6 +40,10 @@ app.get('/health', (_req, res) => {
 
 // APIルートの設定
 app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/time-entries', timeEntryRoutes);
 
 // エラーハンドリングミドルウェア
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
