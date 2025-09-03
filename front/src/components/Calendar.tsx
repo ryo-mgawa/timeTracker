@@ -7,6 +7,7 @@ import moment from 'moment';
 import 'moment/locale/ja';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
+import '../styles/calendar.css';
 import { TimeEntry, User, Task, Category } from 'types';
 import { timeEntryService } from 'services/timeEntryService';
 
@@ -299,24 +300,55 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       `${localizer?.format(start, 'HH:mm', culture) || start.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })} - ${localizer?.format(end, 'HH:mm', culture) || end.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`
   }), []);
 
+  // イベントのスタイルをカスタマイズ
+  const eventPropGetter = useCallback((event: any) => {
+    const calendarEvent = event as CalendarEvent;
+    
+    // イベントにresourceが存在しない場合はデフォルトスタイルを返す
+    if (!calendarEvent.resource) {
+      return {
+        style: {
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          border: 'none',
+          borderRadius: '0.375rem',
+          color: 'white',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          fontSize: '0.875rem',
+          fontWeight: '500'
+        }
+      };
+    }
+    
+    const { task, category } = calendarEvent.resource;
+    
+    // プロジェクトの色を基調に、分類の色をアクセントとして使用
+    const projectColor = task.projectId ? '#667eea' : '#6c757d'; // デフォルトの色
+    const categoryColor = category.color || '#28a745';
+    
+    // グラデーションを作成（プロジェクト色→分類色）
+    const backgroundGradient = `linear-gradient(135deg, ${projectColor} 0%, ${categoryColor} 100%)`;
+    
+    return {
+      style: {
+        background: backgroundGradient,
+        border: 'none',
+        borderRadius: '0.375rem',
+        color: 'white',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        fontSize: '0.875rem',
+        fontWeight: '500'
+      }
+    };
+  }, []);
+
   return (
     <div style={{ height: '600px', position: 'relative' }}>
       {loading && (
-        <div 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(255, 255, 255, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}
-        >
-          <div className="text-primary">処理中...</div>
+        <div className="calendar-loading-overlay">
+          <div className="calendar-loading-content">
+            <div className="calendar-loading-spinner" />
+            <div className="calendar-loading-text">処理中...</div>
+          </div>
         </div>
       )}
       
@@ -325,6 +357,7 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
         events={events}
         startAccessor={(event: any) => (event as CalendarEvent).start}
         endAccessor={(event: any) => (event as CalendarEvent).end}
+        eventPropGetter={eventPropGetter}
         style={{ height: '100%' }}
         view={currentView}
         onView={(view: View) => setCurrentView(view)}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ListGroup, Spinner, Alert } from 'react-bootstrap';
 import { Task, Project } from 'types';
 import { taskService } from 'services/taskService';
+import '../styles/selectors.css';
 
 interface TaskSelectorProps {
   readonly selectedProject: Project | null;
@@ -67,8 +68,8 @@ const TaskSelector: React.FC<TaskSelectorProps> = ({
   // プロジェクトが選択されていない場合
   if (!selectedProject) {
     return (
-      <div className="text-center p-3">
-        <small className="text-muted">プロジェクトを先に選択してください</small>
+      <div className="selector-empty">
+        プロジェクトを先に選択してください
       </div>
     );
   }
@@ -76,9 +77,9 @@ const TaskSelector: React.FC<TaskSelectorProps> = ({
   // ローディング表示
   if (loading) {
     return (
-      <div className="text-center p-3">
+      <div className="selector-loading">
         <Spinner animation="border" size="sm" className="me-2" />
-        <small className="text-muted">タスク読み込み中...</small>
+        <small>タスク読み込み中...</small>
       </div>
     );
   }
@@ -86,23 +87,23 @@ const TaskSelector: React.FC<TaskSelectorProps> = ({
   // エラー表示
   if (error) {
     return (
-      <Alert variant="danger" className="p-2 small">
+      <div className="selector-error">
         {error}
-      </Alert>
+      </div>
     );
   }
 
   // タスクが0件の場合
   if (tasks.length === 0) {
     return (
-      <div className="text-center p-3">
-        <small className="text-muted">このプロジェクトにはタスクがありません</small>
+      <div className="selector-empty">
+        このプロジェクトにはタスクがありません
       </div>
     );
   }
 
   return (
-    <ListGroup variant="flush">
+    <ListGroup variant="flush" className="selector-container">
       {tasks.map((task) => (
         <ListGroup.Item
           key={task.id}
@@ -120,7 +121,7 @@ const TaskSelector: React.FC<TaskSelectorProps> = ({
             )}
           </div>
           {selectedTask?.id === task.id && (
-            <small className="text-primary">✓</small>
+            <small className="selector-checkmark">✓</small>
           )}
         </ListGroup.Item>
       ))}

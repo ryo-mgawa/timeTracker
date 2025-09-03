@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ListGroup, Spinner, Alert } from 'react-bootstrap';
 import { Category, User } from 'types';
 import { categoryService } from 'services/categoryService';
+import '../styles/selectors.css';
 
 interface CategorySelectorProps {
   readonly user: User;
@@ -59,9 +60,9 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   // ローディング表示
   if (loading) {
     return (
-      <div className="text-center p-3">
+      <div className="selector-loading">
         <Spinner animation="border" size="sm" className="me-2" />
-        <small className="text-muted">分類読み込み中...</small>
+        <small>分類読み込み中...</small>
       </div>
     );
   }
@@ -69,23 +70,23 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   // エラー表示
   if (error) {
     return (
-      <Alert variant="danger" className="p-2 small">
+      <div className="selector-error">
         {error}
-      </Alert>
+      </div>
     );
   }
 
   // 分類が0件の場合
   if (categories.length === 0) {
     return (
-      <div className="text-center p-3">
-        <small className="text-muted">利用可能な分類がありません</small>
+      <div className="selector-empty">
+        利用可能な分類がありません
       </div>
     );
   }
 
   return (
-    <ListGroup variant="flush">
+    <ListGroup variant="flush" className="selector-container">
       {categories.map((category) => (
         <ListGroup.Item
           key={category.id}
@@ -96,10 +97,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         >
           <div className="d-flex align-items-center">
             <div
-              className="rounded me-2"
+              className="color-indicator"
               style={{
-                width: '12px',
-                height: '12px',
                 backgroundColor: category.color || '#28a745'
               }}
             />
@@ -113,7 +112,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             </div>
           </div>
           {selectedCategory?.id === category.id && (
-            <small className="text-primary">✓</small>
+            <small className="selector-checkmark">✓</small>
           )}
         </ListGroup.Item>
       ))}

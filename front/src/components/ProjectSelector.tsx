@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ListGroup, Spinner, Alert } from 'react-bootstrap';
 import { Project, User } from 'types';
 import { projectService } from 'services/projectService';
+import '../styles/selectors.css';
 
 interface ProjectSelectorProps {
   readonly user: User;
@@ -59,9 +60,9 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   // ローディング表示
   if (loading) {
     return (
-      <div className="text-center p-3">
+      <div className="selector-loading">
         <Spinner animation="border" size="sm" className="me-2" />
-        <small className="text-muted">プロジェクト読み込み中...</small>
+        <small>プロジェクト読み込み中...</small>
       </div>
     );
   }
@@ -69,23 +70,23 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
   // エラー表示
   if (error) {
     return (
-      <Alert variant="danger" className="p-2 small">
+      <div className="selector-error">
         {error}
-      </Alert>
+      </div>
     );
   }
 
   // プロジェクトが0件の場合
   if (projects.length === 0) {
     return (
-      <div className="text-center p-3">
-        <small className="text-muted">利用可能なプロジェクトがありません</small>
+      <div className="selector-empty">
+        利用可能なプロジェクトがありません
       </div>
     );
   }
 
   return (
-    <ListGroup variant="flush">
+    <ListGroup variant="flush" className="selector-container">
       {projects.map((project) => (
         <ListGroup.Item
           key={project.id}
@@ -96,10 +97,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         >
           <div className="d-flex align-items-center">
             <div
-              className="rounded me-2"
+              className="color-indicator"
               style={{
-                width: '12px',
-                height: '12px',
                 backgroundColor: project.color || '#007bff'
               }}
             />
@@ -113,7 +112,7 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
             </div>
           </div>
           {selectedProject?.id === project.id && (
-            <small className="text-primary">✓</small>
+            <small className="selector-checkmark">✓</small>
           )}
         </ListGroup.Item>
       ))}
