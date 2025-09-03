@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { User } from 'types';
 import { userService } from 'services/userService';
 
-interface UserSelectionProps {
-  readonly onUserSelect: (user: User) => void;
-}
-
-
-const UserSelection: React.FC<UserSelectionProps> = ({ onUserSelect }) => {
+const UserSelection: React.FC = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<readonly User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -38,7 +35,8 @@ const UserSelection: React.FC<UserSelectionProps> = ({ onUserSelect }) => {
   const handleUserSelect = (user: User): void => {
     if (!user) return; // アーリーリターン
     
-    onUserSelect(user);
+    // 選択したユーザーIDを使って工数入力画面に遷移
+    navigate(`/time-entry/${user.id}`);
   };
 
   // ローディング表示

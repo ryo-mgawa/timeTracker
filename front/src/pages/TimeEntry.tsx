@@ -1,32 +1,93 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Button, Nav } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Nav, Alert, Spinner } from 'react-bootstrap';
+import { useParams, useNavigate } from 'react-router-dom';
 import { User, Project, Category, Task, TimeEntry as TimeEntryType } from 'types';
+import { userService } from 'services/userService';
 import TimeTrackingCalendar from 'components/Calendar';
-
-interface TimeEntryProps {
-  readonly user: User;
-}
 
 // タブの種類
 type TabType = 'calendar' | 'list';
 
-const TimeEntry: React.FC<TimeEntryProps> = ({ user }) => {
+const TimeEntry: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
+  
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
+  // ユーザー情報を取得
+  useEffect(() => {
+    const fetchUser = async (): Promise<void> => {
+      // アーリーリターン - userIdが無い場合
+      if (!userId) {
+        navigate('/');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+        
+        const fetchedUser = await userService.getUserById(userId);
+        setUser(fetchedUser);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'ユーザー情報の取得に失敗しました';
+        setError(errorMessage);
+        console.error('Error fetching user:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [userId, navigate]);
+
+  // ローディング表示
+  if (loading) {
+    return (
+      <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+        <div className="text-center">
+          <Spinner animation="border" role="status" className="mb-3">
+            <span className="visually-hidden">読み込み中...</span>
+          </Spinner>
+          <p>ユーザー情報を読み込んでいます...</p>
+        </div>
+      </Container>
+    );
+  }
+
+  // エラー表示
+  if (error) {
+    return (
+      <Container>
+        <Alert variant="danger">
+          <Alert.Heading>エラーが発生しました</Alert.Heading>
+          <p>{error}</p>
+          <Button variant="outline-danger" onClick={() => navigate('/')}>
+            ユーザー選択に戻る
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
+
   // アーリーリターン - ユーザーが未選択の場合
   if (!user) {
     return (
       <Container>
-        <Card className="text-center p-4">
-          <Card.Body>
-            <h5>エラー: ユーザーが選択されていません</h5>
-            <p>ユーザー選択画面に戻って、ユーザーを選択してください。</p>
-          </Card.Body>
-        </Card>
+        <Alert variant="warning">
+          <Alert.Heading>ユーザーが選択されていません</Alert.Heading>
+          <p>ユーザー選択画面に戻って、ユーザーを選択してください。</p>
+          <Button variant="outline-warning" onClick={() => navigate('/')}>
+            ユーザー選択に戻る
+          </Button>
+        </Alert>
       </Container>
     );
   }
