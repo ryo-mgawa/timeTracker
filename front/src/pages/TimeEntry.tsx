@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Nav } from 'react-bootstrap';
-import { User, Project, Category, Task } from 'types';
+import { User, Project, Category, Task, TimeEntry as TimeEntryType } from 'types';
+import TimeTrackingCalendar from 'components/Calendar';
 
 interface TimeEntryProps {
   readonly user: User;
@@ -56,15 +57,20 @@ const TimeEntry: React.FC<TimeEntryProps> = ({ user }) => {
               </small>
             </Card.Header>
             <Card.Body>
-              <div className="text-center p-5">
-                <h6 className="text-muted">カレンダーコンポーネント</h6>
-                <p className="text-muted">
-                  ここにドラッグ&ドロップ対応のカレンダーUIが表示されます
-                </p>
-                <small className="text-muted">
-                  （実装予定：react-big-calendarまたはカスタムカレンダー）
-                </small>
-              </div>
+              <TimeTrackingCalendar
+                user={user}
+                selectedTask={selectedTask}
+                selectedCategory={selectedCategory}
+                onTimeEntryCreate={(timeEntry: TimeEntryType) => {
+                  console.log('工数エントリが作成されました:', timeEntry);
+                }}
+                onTimeEntryUpdate={(timeEntry: TimeEntryType) => {
+                  console.log('工数エントリが更新されました:', timeEntry);
+                }}
+                onTimeEntryDelete={(id: string) => {
+                  console.log('工数エントリが削除されました:', id);
+                }}
+              />
             </Card.Body>
           </Card>
         );

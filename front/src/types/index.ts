@@ -59,7 +59,7 @@ export interface TimeEntry {
   readonly userId: UserId;
   readonly startTime: Date;
   readonly endTime: Date;
-  readonly date: Date;
+  readonly workDate: Date; // バックエンドAPIと統一
   readonly memo?: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
