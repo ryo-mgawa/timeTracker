@@ -1,18 +1,17 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Calendar, momentLocalizer, View } from 'react-big-calendar';
-import withDragAndDrop, { 
-  withDragAndDropProps 
-} from 'react-big-calendar/lib/addons/dragAndDrop';
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import 'moment/locale/ja';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import '../styles/calendar.css';
-import { TimeEntry, User, Task, Category } from 'types';
+import { TimeEntry, User, Task, Category, Project } from 'types';
 import { timeEntryService } from 'services/timeEntryService';
 import { taskService } from 'services/taskService';
 import { projectService } from 'services/projectService';
 import { categoryService } from 'services/categoryService';
+import TimeEntryDetailModal from './TimeEntryDetailModal';
 
 // moment.jsの日本語設定
 moment.locale('ja');
@@ -31,6 +30,7 @@ interface CalendarEvent {
     timeEntry: TimeEntry;
     task: Task;
     category: Category;
+    project: Project;
   };
 }
 
@@ -71,6 +71,10 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
   const [currentView, setCurrentView] = useState<View>('week');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState<boolean>(false);
+  
+  // 詳細モーダルの状態管理
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // 初期データ取得
   useEffect(() => {
@@ -111,7 +115,8 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
                 resource: {
                   timeEntry: entry,
                   task,
-                  category
+                  category,
+                  project
                 }
               };
             } catch (error) {
@@ -125,7 +130,8 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
                 resource: {
                   timeEntry: entry,
                   task: { id: entry.taskId, name: 'タスク名', description: '' } as any,
-                  category: { id: entry.categoryId, name: '分類名', color: '#007bff' } as any
+                  category: { id: entry.categoryId, name: '分類名', color: '#007bff' } as any,
+                  project: { id: '', name: 'プロジェクト名不明', color: '#6c757d', description: '' } as any
                 }
               };
             }
@@ -289,15 +295,19 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       );
 
       // 新しいイベントを作成
+      // プロジェクト情報を取得してイベントに含める
+      const project = await projectService.getProjectById(user.id, selectedTask.projectId);
+      
       const newEvent: CalendarEvent = {
         id: newTimeEntry.id,
-        title: `${selectedTask.name} (${selectedCategory.name})`,
+        title: `${project.name}-${selectedTask.name}`,
         start: snappedStart,
         end: snappedEnd,
         resource: {
           timeEntry: newTimeEntry,
           task: selectedTask,
-          category: selectedCategory
+          category: selectedCategory,
+          project
         }
       };
 
@@ -314,33 +324,36 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     }
   }, [selectedTask, selectedCategory, user.id, onTimeEntryCreate]);
 
-  // イベント選択時のハンドラー（削除機能用）
+  // イベント選択時のハンドラー（詳細モーダル表示）
   const onSelectEvent = useCallback((event: CalendarEvent) => {
-    const shouldDelete = window.confirm(
-      `工数エントリを削除しますか？\n\n` +
-      `タスク: ${event.resource.task.name}\n` +
-      `分類: ${event.resource.category.name}\n` +
-      `時間: ${event.start.toLocaleTimeString()} - ${event.end.toLocaleTimeString()}`
-    );
-
-    if (shouldDelete) {
-      handleEventDelete(event);
-    }
+    setSelectedEvent(event);
+    setShowDetailModal(true);
   }, []);
 
-  // イベント削除処理
-  const handleEventDelete = useCallback(async (event: CalendarEvent) => {
+  // 詳細モーダルを閉じる
+  const handleModalClose = useCallback(() => {
+    setShowDetailModal(false);
+    setSelectedEvent(null);
+  }, []);
+
+  // 詳細モーダルからの削除処理
+  const handleModalDelete = useCallback(async (timeEntryId: string) => {
+    if (!selectedEvent) return;
+    
     try {
       setLoading(true);
       
       // TimeEntry APIで削除
-      await timeEntryService.deleteTimeEntry(user.id, event.resource.timeEntry.id);
+      await timeEntryService.deleteTimeEntry(user.id, timeEntryId);
       
       // イベントリストから削除
-      setEvents(prevEvents => prevEvents.filter(e => e.id !== event.id));
+      setEvents(prevEvents => prevEvents.filter(e => e.id !== timeEntryId));
       
       // コールバック実行
-      onTimeEntryDelete?.(event.resource.timeEntry.id);
+      onTimeEntryDelete?.(timeEntryId);
+      
+      // モーダルを閉じる
+      handleModalClose();
       
     } catch (error) {
       console.error('工数エントリの削除に失敗しました:', error);
@@ -348,7 +361,8 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [user.id, onTimeEntryDelete]);
+  }, [selectedEvent, user.id, onTimeEntryDelete, handleModalClose]);
+
 
   // カレンダーのメッセージ設定（日本語）
   const messages = useMemo(() => ({
@@ -393,10 +407,9 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       };
     }
     
-    const { task, category } = calendarEvent.resource;
-    
     // プロジェクトの色を基調に、分類の色をアクセントとして使用
-    const projectColor = task.projectId ? '#667eea' : '#6c757d'; // デフォルトの色
+    const { task, category, project } = calendarEvent.resource;
+    const projectColor = project?.color || '#667eea'; // プロジェクトの色
     const categoryColor = category.color || '#28a745';
     
     // グラデーションを作成（プロジェクト色→分類色）
@@ -453,6 +466,18 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
         views={['month', 'week', 'day']}
         popup={true}
         popupOffset={30}
+      />
+      
+      {/* 工数詳細モーダル */}
+      <TimeEntryDetailModal
+        show={showDetailModal}
+        onHide={handleModalClose}
+        timeEntry={selectedEvent?.resource.timeEntry || null}
+        task={selectedEvent?.resource.task || null}
+        category={selectedEvent?.resource.category || null}
+        project={selectedEvent?.resource.project || null}
+        onDelete={handleModalDelete}
+        loading={loading}
       />
     </div>
   );
