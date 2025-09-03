@@ -4,6 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { User, Project, Category, Task, TimeEntry as TimeEntryType } from 'types';
 import { userService } from 'services/userService';
 import TimeTrackingCalendar from 'components/Calendar';
+import ProjectSelector from 'components/ProjectSelector';
+import CategorySelector from 'components/CategorySelector';
+import TaskSelector from 'components/TaskSelector';
 
 // タブの種類
 type TabType = 'calendar' | 'list';
@@ -16,7 +19,7 @@ const TimeEntry: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<TabType>('calendar');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate] = useState<Date>(new Date());
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -94,11 +97,6 @@ const TimeEntry: React.FC = () => {
 
   const handleTabSelect = (tab: TabType): void => {
     setActiveTab(tab);
-  };
-
-  const handleDateChange = (date: Date): void => {
-    if (!date) return;
-    setSelectedDate(date);
   };
 
   const renderTabContent = (): React.ReactElement => {
@@ -197,8 +195,14 @@ const TimeEntry: React.FC = () => {
                 <div className="text-muted small">
                   選択されたプロジェクト: {selectedProject?.name || '未選択'}
                 </div>
-                <div className="mt-2 p-3 bg-light rounded text-center">
-                  <small className="text-muted">プロジェクト一覧（実装予定）</small>
+                <div className="mt-2">
+                  {user && (
+                    <ProjectSelector
+                      user={user}
+                      selectedProject={selectedProject}
+                      onProjectSelect={setSelectedProject}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -208,10 +212,13 @@ const TimeEntry: React.FC = () => {
                 <div className="text-muted small">
                   選択されたタスク: {selectedTask?.name || '未選択'}
                 </div>
-                <div className="mt-2 p-3 bg-light rounded text-center">
-                  <small className="text-muted">
-                    {selectedProject ? 'タスク一覧（実装予定）' : 'プロジェクトを先に選択してください'}
-                  </small>
+                <div className="mt-2">
+                  <TaskSelector
+                    selectedProject={selectedProject}
+                    selectedTask={selectedTask}
+                    onTaskSelect={setSelectedTask}
+                    userId={user.id}
+                  />
                 </div>
               </div>
 
@@ -221,8 +228,14 @@ const TimeEntry: React.FC = () => {
                 <div className="text-muted small">
                   選択された分類: {selectedCategory?.name || '未選択'}
                 </div>
-                <div className="mt-2 p-3 bg-light rounded text-center">
-                  <small className="text-muted">分類一覧（実装予定）</small>
+                <div className="mt-2">
+                  {user && (
+                    <CategorySelector
+                      user={user}
+                      selectedCategory={selectedCategory}
+                      onCategorySelect={setSelectedCategory}
+                    />
+                  )}
                 </div>
               </div>
             </Card.Body>

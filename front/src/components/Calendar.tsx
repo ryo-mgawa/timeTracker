@@ -289,14 +289,14 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     time: '時刻',
     event: 'イベント',
     noEventsInRange: '期間内にイベントはありません',
-    showMore: total => `他${total}件`
+    showMore: (total: number) => `他${total}件`
   }), []);
 
   // カレンダーのフォーマット設定
   const formats = useMemo(() => ({
     timeGutterFormat: 'HH:mm',
-    eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
-      `${localizer.format(start, 'HH:mm', culture)} - ${localizer.format(end, 'HH:mm', culture)}`
+    eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }, culture?: string, localizer?: any) =>
+      `${localizer?.format(start, 'HH:mm', culture) || start.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })} - ${localizer?.format(end, 'HH:mm', culture) || end.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`
   }), []);
 
   return (
@@ -323,8 +323,8 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       <DragAndDropCalendar
         localizer={localizer}
         events={events}
-        startAccessor="start"
-        endAccessor="end"
+        startAccessor={(event: any) => (event as CalendarEvent).start}
+        endAccessor={(event: any) => (event as CalendarEvent).end}
         style={{ height: '100%' }}
         view={currentView}
         onView={(view: View) => setCurrentView(view)}
@@ -333,11 +333,11 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
         onEventDrop={onEventDrop}
         onEventResize={onEventResize}
         onSelectSlot={onSelectSlot}
-        onSelectEvent={onSelectEvent}
+        onSelectEvent={(event: any) => onSelectEvent(event as CalendarEvent)}
         selectable={true}
         resizable={true}
         messages={messages}
-        formats={formats}
+        formats={formats as any}
         step={15}
         timeslots={4}
         min={new Date(0, 0, 0, 8, 0, 0)}
