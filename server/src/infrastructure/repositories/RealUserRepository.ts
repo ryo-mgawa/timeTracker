@@ -1,4 +1,4 @@
-import { PrismaClient, PrismaClientKnownRequestError } from '../../generated/prisma';
+import { PrismaClient } from '../../generated/prisma';
 import { User } from '../../domain/entities/User';
 import { UserId } from '../../shared/types/common';
 
@@ -92,10 +92,11 @@ export class RealUserRepository {
         prismaUser.deletedAt || undefined
       );
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2002')) {
         throw new Error('このメールアドレスは既に使用されています');
       }
-      throw new Error(`ユーザー保存に失敗しました: ${error}`);
+      throw new Error(`ユーザー保存に失敗しました: ${errorMessage}`);
     }
   }
 
@@ -111,10 +112,11 @@ export class RealUserRepository {
         }
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2025')) {
         throw new Error('ユーザーが見つかりません');
       }
-      throw new Error(`ユーザー削除に失敗しました: ${error}`);
+      throw new Error(`ユーザー削除に失敗しました: ${errorMessage}`);
     }
   }
 

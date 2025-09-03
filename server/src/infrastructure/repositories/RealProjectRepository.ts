@@ -1,4 +1,4 @@
-import { PrismaClient, PrismaClientKnownRequestError } from '../../generated/prisma';
+import { PrismaClient } from '../../generated/prisma';
 import { Project } from '../../domain/entities/Project';
 import { ProjectId, UserId } from '../../shared/types/common';
 
@@ -164,15 +164,14 @@ export class RealProjectRepository {
         prismaProject.deletedAt || undefined
       );
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2003') {
-          throw new Error('指定されたユーザーが存在しません');
-        }
-        if (error.code === 'P2002') {
-          throw new Error('プロジェクト名が重複しています');
-        }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2003')) {
+        throw new Error('指定されたユーザーが存在しません');
       }
-      throw new Error(`プロジェクト保存に失敗しました: ${error}`);
+      if (errorMessage.includes('P2002')) {
+        throw new Error('プロジェクト名が重複しています');
+      }
+      throw new Error(`プロジェクト保存に失敗しました: ${errorMessage}`);
     }
   }
 
@@ -205,14 +204,15 @@ export class RealProjectRepository {
         }
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2025')) {
         throw new Error('プロジェクトが見つかりません');
       }
       // 既にエラーメッセージが設定されている場合はそのまま投げる
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(`プロジェクト削除に失敗しました: ${error}`);
+      throw new Error(`プロジェクト削除に失敗しました: ${errorMessage}`);
     }
   }
 

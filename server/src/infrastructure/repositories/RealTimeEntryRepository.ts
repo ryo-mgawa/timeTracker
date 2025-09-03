@@ -1,4 +1,4 @@
-import { PrismaClient, PrismaClientKnownRequestError } from '../../generated/prisma';
+import { PrismaClient } from '../../generated/prisma';
 import { TimeEntry } from '../../domain/entities/TimeEntry';
 import { TimeEntryId, TaskId, CategoryId, UserId } from '../../shared/types/common';
 
@@ -297,7 +297,7 @@ export class RealTimeEntryRepository {
           startTime: timeEntry.period.startTime,
           endTime: timeEntry.period.endTime,
           date: timeEntry.getWorkDate(),
-          memo: timeEntry.memo,
+          memo: timeEntry.memo || null,
           updatedAt: new Date()
         },
         create: {
@@ -308,7 +308,7 @@ export class RealTimeEntryRepository {
           startTime: timeEntry.period.startTime,
           endTime: timeEntry.period.endTime,
           date: timeEntry.getWorkDate(),
-          memo: timeEntry.memo
+          memo: timeEntry.memo || null
         }
       });
 
@@ -324,19 +324,18 @@ export class RealTimeEntryRepository {
         prismaTimeEntry.updatedAt
       );
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2003') {
-          throw new Error('指定されたタスク、分類、またはユーザーが存在しません');
-        }
-        if (error.code === 'P2002') {
-          throw new Error('工数エントリが重複しています');
-        }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2003')) {
+        throw new Error('指定されたタスク、分類、またはユーザーが存在しません');
+      }
+      if (errorMessage.includes('P2002')) {
+        throw new Error('工数エントリが重複しています');
       }
       // 既にエラーメッセージが設定されている場合はそのまま投げる
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(`工数エントリ保存に失敗しました: ${error}`);
+      throw new Error(`工数エントリ保存に失敗しました: ${errorMessage}`);
     }
   }
 
@@ -369,14 +368,15 @@ export class RealTimeEntryRepository {
         }
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2025')) {
         throw new Error('工数エントリが見つかりません');
       }
       // 既にエラーメッセージが設定されている場合はそのまま投げる
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(`工数エントリ削除に失敗しました: ${error}`);
+      throw new Error(`工数エントリ削除に失敗しました: ${errorMessage}`);
     }
   }
 

@@ -1,4 +1,4 @@
-import { PrismaClient, PrismaClientKnownRequestError } from '../../generated/prisma';
+import { PrismaClient } from '../../generated/prisma';
 import { Category } from '../../domain/entities/Category';
 import { CategoryId, UserId } from '../../shared/types/common';
 
@@ -164,15 +164,14 @@ export class RealCategoryRepository {
         prismaCategory.deletedAt || undefined
       );
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2003') {
-          throw new Error('指定されたユーザーが存在しません');
-        }
-        if (error.code === 'P2002') {
-          throw new Error('分類名が重複しています');
-        }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2003')) {
+        throw new Error('指定されたユーザーが存在しません');
       }
-      throw new Error(`分類保存に失敗しました: ${error}`);
+      if (errorMessage.includes('P2002')) {
+        throw new Error('分類名が重複しています');
+      }
+      throw new Error(`分類保存に失敗しました: ${errorMessage}`);
     }
   }
 
@@ -205,14 +204,15 @@ export class RealCategoryRepository {
         }
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('P2025')) {
         throw new Error('分類が見つかりません');
       }
       // 既にエラーメッセージが設定されている場合はそのまま投げる
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(`分類削除に失敗しました: ${error}`);
+      throw new Error(`分類削除に失敗しました: ${errorMessage}`);
     }
   }
 
