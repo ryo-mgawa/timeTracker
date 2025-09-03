@@ -1,0 +1,148 @@
+/* セレクター共通のスタイル */
+.selector-container {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selector-container .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f8f9fa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.selector-container .list-group-item:hover {
+  background: linear-gradient(135deg, #f8f9fc 0%, #e3e6f0 100%);
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selector-container .list-group-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  transform: translateX(4px);
+}
+
+.selector-container .list-group-item:last-child {
+  border-bottom: none;
+}
+
+/* セレクターの色インジケーター */
+.color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.list-group-item.active .color-indicator {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* チェックマーク */
+.selector-checkmark {
+  font-size: 14px;
+  font-weight: bold;
+  color: #28a745;
+  transition: all 0.3s ease;
+}
+
+.list-group-item.active .selector-checkmark {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* タスクの見積時間表示 */
+.task-estimate {
+  font-size: 11px;
+  color: #17a2b8;
+  font-weight: 600;
+  background: rgba(23, 162, 184, 0.1);
+  padding: 2px 6px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.list-group-item.active .task-estimate {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ローディング・エラー状態のスタイル */
+.selector-loading {
+  padding: 1rem;
+  text-align: center;
+  color: #6c757d;
+  background: linear-gradient(135deg, #f8f9fc 0%, #e3e6f0 100%);
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.selector-loading .spinner-border {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-width: 2px;
+  margin-right: 0.5rem;
+}
+
+.selector-error {
+  padding: 0.75rem;
+  text-align: center;
+  background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
+  color: #721c24;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+}
+
+.selector-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #6c757d;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+}
+
+/* アニメーション */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.selector-container .list-group-item {
+  animation: slideIn 0.3s ease;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .selector-container .list-group-item {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .color-indicator {
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+  }
+  
+  .selector-checkmark {
+    font-size: 12px;
+  }
+}
