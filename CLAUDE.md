@@ -152,6 +152,25 @@ t-wadaのTDD準拠
 
 ### 次期実装予定TODOリスト（優先度順）
 
+#### Phase 0: 基本機能の完成 ⚡ [最優先]
+1. **プロジェクト・タスク・分類作成機能** [最高優先度]
+   - フロントエンドでの新規作成フォーム実装
+   - モーダルダイアログによるUX向上
+   - バリデーション機能（重複チェック・必須項目）
+   - カラーピッカー機能（プロジェクト・分類の色設定）
+
+2. **ユーザー作成機能** [最高優先度]
+   - 管理者向けユーザー作成機能
+   - ユーザー情報編集機能
+   - ユーザー一覧表示とフィルタリング
+   - アクティブ/非アクティブ状態管理
+
+3. **リストビュー機能** [最高優先度]
+   - プロジェクト・タスク・分類の一覧表示
+   - 検索・ソート・フィルタリング機能
+   - インライン編集機能
+   - 論理削除/復元機能
+
 #### Phase 1: セキュリティ・認証基盤 🔐
 1. **ユーザー認証機能の実装** [高優先度]
    - Supabase Authを使用したログイン/サインアップ機能
@@ -203,6 +222,13 @@ CREATE POLICY "Users can view own projects" ON projects
 CREATE POLICY "Users can insert own projects" ON projects
     FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 ```
+
+### Phase 0実装時の技術指針
+- **モーダルダイアログ**: React Bootstrap Modal使用
+- **フォームバリデーション**: `react-hook-form` + `yup`スキーマ
+- **カラーピッカー**: `react-color`ライブラリ
+- **データテーブル**: React Bootstrap Table + カスタムソート/フィルタ
+- **インライン編集**: `contentEditable` + `onBlur`イベント
 
 ### エクスポート機能の技術選択肢
 - **CSVエクスポート**: `react-csv`ライブラリ
