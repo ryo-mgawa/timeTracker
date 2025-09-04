@@ -3,6 +3,7 @@ import { Badge } from 'react-bootstrap';
 import { Project } from '../types';
 import { projectService } from '../services/projectService';
 import AdminList from './AdminList';
+import ProjectDetailModal from './ProjectDetailModal';
 
 // プロパティ型定義
 interface ProjectListProps {
@@ -19,6 +20,8 @@ const ProjectList: React.FC<ProjectListProps> = ({
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
 
   // プロジェクト一覧取得
   const fetchProjects = useCallback(async (): Promise<void> => {
@@ -66,6 +69,20 @@ const ProjectList: React.FC<ProjectListProps> = ({
   const handleEdit = useCallback((project: Project): void => {
     onEdit?.(project);
   }, [onEdit]);
+
+  // 詳細表示ハンドラー
+  const handleItemClick = useCallback((project: Project): void => {
+    setSelectedProject(project);
+    setShowDetailModal(true);
+  }, []);
+
+  // 詳細モーダル削除ハンドラー
+  const handleDetailDelete = useCallback(async (projectId: string): Promise<void> => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      await handleDelete(project);
+    }
+  }, [projects, handleDelete]);
 
   // カラム定義
   const columns = [
@@ -137,22 +154,33 @@ const ProjectList: React.FC<ProjectListProps> = ({
   ];
 
   return (
-    <AdminList
-      title="プロジェクト一覧"
-      items={projects}
-      columns={columns}
-      loading={loading}
-      error={error}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onRefresh={fetchProjects}
-      searchPlaceholder="プロジェクト名で検索..."
-      emptyMessage={
-        userId 
-          ? "プロジェクトがありません。新規作成してください。"
-          : "ユーザーを選択してください。"
-      }
-    />
+    <>
+      <AdminList
+        title="プロジェクト一覧"
+        items={projects}
+        columns={columns}
+        loading={loading}
+        error={error}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onItemClick={handleItemClick}
+        onRefresh={fetchProjects}
+        searchPlaceholder="プロジェクト名で検索..."
+        emptyMessage={
+          userId 
+            ? "プロジェクトがありません。新規作成してください。"
+            : "ユーザーを選択してください。"
+        }
+      />
+
+      <ProjectDetailModal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        project={selectedProject}
+        onDelete={handleDetailDelete}
+        loading={loading}
+      />
+    </>
   );
 };
 

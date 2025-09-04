@@ -4,6 +4,7 @@ import { Task, Project } from '../types';
 import { taskService } from '../services/taskService';
 import { projectService } from '../services/projectService';
 import AdminList from './AdminList';
+import TaskDetailModal from './TaskDetailModal';
 
 // プロパティ型定義
 interface TaskListProps {
@@ -21,6 +22,9 @@ const TaskList: React.FC<TaskListProps> = ({
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
 
   // プロジェクト一覧を取得（タスク表示用）
   const fetchProjects = useCallback(async (): Promise<void> => {
@@ -82,6 +86,22 @@ const TaskList: React.FC<TaskListProps> = ({
   const handleEdit = useCallback((task: Task): void => {
     onEdit?.(task);
   }, [onEdit]);
+
+  // 詳細表示ハンドラー
+  const handleItemClick = useCallback((task: Task): void => {
+    const project = projects.find(p => p.id === task.projectId);
+    setSelectedTask(task);
+    setSelectedProject(project || null);
+    setShowDetailModal(true);
+  }, [projects]);
+
+  // 詳細モーダル削除ハンドラー
+  const handleDetailDelete = useCallback(async (taskId: string): Promise<void> => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      await handleDelete(task);
+    }
+  }, [tasks, handleDelete]);
 
   // プロジェクト名を取得
   const getProjectName = (projectId: string): string => {
@@ -150,22 +170,34 @@ const TaskList: React.FC<TaskListProps> = ({
   ];
 
   return (
-    <AdminList
-      title="タスク一覧"
-      items={tasks}
-      columns={columns}
-      loading={loading}
-      error={error}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onRefresh={fetchTasks}
-      searchPlaceholder="タスク名で検索..."
-      emptyMessage={
-        userId 
-          ? "タスクがありません。新規作成してください。"
-          : "ユーザーを選択してください。"
-      }
-    />
+    <>
+      <AdminList
+        title="タスク一覧"
+        items={tasks}
+        columns={columns}
+        loading={loading}
+        error={error}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onItemClick={handleItemClick}
+        onRefresh={fetchTasks}
+        searchPlaceholder="タスク名で検索..."
+        emptyMessage={
+          userId 
+            ? "タスクがありません。新規作成してください。"
+            : "ユーザーを選択してください。"
+        }
+      />
+
+      <TaskDetailModal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        task={selectedTask}
+        project={selectedProject}
+        onDelete={handleDetailDelete}
+        loading={loading}
+      />
+    </>
   );
 };
 

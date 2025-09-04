@@ -3,6 +3,7 @@ import { Badge } from 'react-bootstrap';
 import { User } from '../types';
 import { userService } from '../services/userService';
 import AdminList from './AdminList';
+import UserDetailModal from './UserDetailModal';
 
 // プロパティ型定義
 interface UserListProps {
@@ -17,6 +18,8 @@ const UserList: React.FC<UserListProps> = ({
   const [users, setUsers] = useState<readonly User[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
 
   // ユーザー一覧取得
   const fetchUsers = useCallback(async (): Promise<void> => {
@@ -60,6 +63,20 @@ const UserList: React.FC<UserListProps> = ({
   const handleEdit = useCallback((user: User): void => {
     onEdit?.(user);
   }, [onEdit]);
+
+  // 詳細表示ハンドラー
+  const handleItemClick = useCallback((user: User): void => {
+    setSelectedUser(user);
+    setShowDetailModal(true);
+  }, []);
+
+  // 詳細モーダル削除ハンドラー
+  const handleDetailDelete = useCallback(async (userId: string): Promise<void> => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      await handleDelete(user);
+    }
+  }, [users, handleDelete]);
 
   // カラム定義
   const columns = [
@@ -132,18 +149,29 @@ const UserList: React.FC<UserListProps> = ({
   ];
 
   return (
-    <AdminList
-      title="ユーザー一覧"
-      items={users}
-      columns={columns}
-      loading={loading}
-      error={error}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onRefresh={fetchUsers}
-      searchPlaceholder="ユーザー名やメールで検索..."
-      emptyMessage="ユーザーがありません。新規作成してください。"
-    />
+    <>
+      <AdminList
+        title="ユーザー一覧"
+        items={users}
+        columns={columns}
+        loading={loading}
+        error={error}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onItemClick={handleItemClick}
+        onRefresh={fetchUsers}
+        searchPlaceholder="ユーザー名やメールで検索..."
+        emptyMessage="ユーザーがありません。新規作成してください。"
+      />
+
+      <UserDetailModal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        user={selectedUser}
+        onDelete={handleDetailDelete}
+        loading={loading}
+      />
+    </>
   );
 };
 

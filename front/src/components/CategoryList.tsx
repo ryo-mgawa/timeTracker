@@ -3,6 +3,7 @@ import { Badge } from 'react-bootstrap';
 import { Category } from '../types';
 import { categoryService } from '../services/categoryService';
 import AdminList from './AdminList';
+import CategoryDetailModal from './CategoryDetailModal';
 
 // プロパティ型定義
 interface CategoryListProps {
@@ -19,6 +20,8 @@ const CategoryList: React.FC<CategoryListProps> = ({
   const [categories, setCategories] = useState<readonly Category[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
 
   // 分類一覧取得
   const fetchCategories = useCallback(async (): Promise<void> => {
@@ -66,6 +69,20 @@ const CategoryList: React.FC<CategoryListProps> = ({
   const handleEdit = useCallback((category: Category): void => {
     onEdit?.(category);
   }, [onEdit]);
+
+  // 詳細表示ハンドラー
+  const handleItemClick = useCallback((category: Category): void => {
+    setSelectedCategory(category);
+    setShowDetailModal(true);
+  }, []);
+
+  // 詳細モーダル削除ハンドラー
+  const handleDetailDelete = useCallback(async (categoryId: string): Promise<void> => {
+    const category = categories.find(c => c.id === categoryId);
+    if (category) {
+      await handleDelete(category);
+    }
+  }, [categories, handleDelete]);
 
   // カラム定義
   const columns = [
@@ -136,22 +153,33 @@ const CategoryList: React.FC<CategoryListProps> = ({
   ];
 
   return (
-    <AdminList
-      title="分類一覧"
-      items={categories}
-      columns={columns}
-      loading={loading}
-      error={error}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      onRefresh={fetchCategories}
-      searchPlaceholder="分類名で検索..."
-      emptyMessage={
-        userId 
-          ? "分類がありません。新規作成してください。"
-          : "ユーザーを選択してください。"
-      }
-    />
+    <>
+      <AdminList
+        title="分類一覧"
+        items={categories}
+        columns={columns}
+        loading={loading}
+        error={error}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onItemClick={handleItemClick}
+        onRefresh={fetchCategories}
+        searchPlaceholder="分類名で検索..."
+        emptyMessage={
+          userId 
+            ? "分類がありません。新規作成してください。"
+            : "ユーザーを選択してください。"
+        }
+      />
+
+      <CategoryDetailModal
+        show={showDetailModal}
+        onHide={() => setShowDetailModal(false)}
+        category={selectedCategory}
+        onDelete={handleDetailDelete}
+        loading={loading}
+      />
+    </>
   );
 };
 

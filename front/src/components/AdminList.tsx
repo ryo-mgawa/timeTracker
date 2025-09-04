@@ -28,6 +28,7 @@ interface AdminListProps<T extends ListItem> {
   readonly error?: string;
   readonly onEdit?: (item: T) => void;
   readonly onDelete?: (item: T) => void;
+  readonly onItemClick?: (item: T) => void;
   readonly onRefresh?: () => void;
   readonly searchPlaceholder?: string;
   readonly emptyMessage?: string;
@@ -41,6 +42,7 @@ function AdminList<T extends ListItem>({
   error = '',
   onEdit,
   onDelete,
+  onItemClick,
   onRefresh,
   searchPlaceholder = '検索...',
   emptyMessage = 'データが見つかりません。'
@@ -114,6 +116,11 @@ function AdminList<T extends ListItem>({
     if (window.confirm(`「${item.name}」を削除しますか？`)) {
       onDelete?.(item);
     }
+  };
+
+  // 行クリックハンドラー
+  const handleItemClick = (item: T): void => {
+    onItemClick?.(item);
   };
 
   const displayItems = sortedItems();
@@ -222,7 +229,14 @@ function AdminList<T extends ListItem>({
                   </thead>
                   <tbody>
                     {displayItems.map((item) => (
-                      <tr key={item.id}>
+                      <tr 
+                        key={item.id}
+                        onClick={onItemClick ? () => handleItemClick(item) : undefined}
+                        style={{ 
+                          cursor: onItemClick ? 'pointer' : 'default' 
+                        }}
+                        className={onItemClick ? 'table-row-hover' : ''}
+                      >
                         {columns.map((column) => (
                           <td key={String(column.key)}>
                             {column.key === 'actions' ? (
