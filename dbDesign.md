@@ -1,9 +1,14 @@
 # データベース設計書
 
+**最終更新**: 2025年9月
+
 ## 1. データベース概要
 - **データベース管理システム**: Supabase (PostgreSQL)
 - **文字エンコーディング**: UTF8
 - **タイムゾーン**: Asia/Tokyo
+- **ORM**: Prisma
+- **論理削除**: `deleted_at` カラムによる管理
+- **制約**: 15分刻み・時間重複防止・データ整合性保証
 
 ## 2. テーブル設計
 
@@ -170,9 +175,17 @@ CREATE INDEX idx_categories_active ON categories(user_id) WHERE deleted_at IS NU
 CREATE INDEX idx_tasks_active ON tasks(user_id) WHERE deleted_at IS NULL;
 ```
 
-## 4. ビュー設計
+## 4. ビュー設計 
 
-### 4.1 工数集計ビュー（プロジェクトごと）
+### 4.1 現在の実装方針
+現在の実装では、ビューを使用せずにAPI側でのクエリ集計方式を採用しています：
+
+- **ReportController**: プロジェクト別・分類別・日別・詳細レポート
+- **Prisma ORM**: 型安全なクエリビルダーによる集計処理  
+- **動的フィルタリング**: 期間・ユーザー指定による柔軟な集計
+- **パフォーマンス**: 適切なインデックス設計により高速化
+
+### 4.2 将来のビュー実装候補
 ```sql
 CREATE VIEW v_project_summary AS
 SELECT 
@@ -296,23 +309,24 @@ CREATE TRIGGER check_time_overlap_trigger
 - **論理削除**: プロジェクト、分類、タスクは論理削除（deleted_at）で管理
 - **物理削除**: ユーザーが完全削除された場合のみ、関連データも物理削除
 - **データ整合性**: 削除されたプロジェクト・分類でも過去の工数データは保持
-- **関係性の保持**: 
+- **関係性の保持**:
   - タスク削除時：過去の工数データは保持（プロジェクト情報はtasks経由で参照）
   - 分類削除時：過去の工数データは保持（分類情報は直接参照）
-  - プロジェクトと分類の独立性を維持
+  - プロジェクトと分類の独立性を維持（工数入力時に独立選択）
 - **バックアップ**: Supabaseの自動バックアップ機能を利用
 
 ## 7. セキュリティ設計
 
 ### 7.1 Row Level Security (RLS)
 ```sql
+
 -- ユーザーは自分のデータのみアクセス可能
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 
--- RLSポリシー例（将来のログイン機能対応）
+-- RLSポリシー例
 CREATE POLICY user_projects_policy ON projects
     FOR ALL USING (user_id = auth.uid());
 
@@ -325,6 +339,13 @@ CREATE POLICY user_tasks_policy ON tasks
 CREATE POLICY user_time_entries_policy ON time_entries
     FOR ALL USING (user_id = auth.uid());
 ```
+
+### 7.2 現在のセキュリティ実装
+- **APIレベル認証**: 全エンドポイントでユーザーIDによるフィルタリング
+- **CORS設定**: Express CORS ミドルウェア適用
+- **Helmet セキュリティ**: HTTP ヘッダーセキュリティ強化
+- **入力検証**: TypeScript + Prisma による型安全性確保
+- **SQLインジェクション対策**: Prisma ORM による安全なクエリ生成
 
 ### 7.2 データバリデーション
 ```sql
@@ -347,17 +368,20 @@ CHECK (EXTRACT(epoch FROM (end_time - start_time)) <= 86400); -- 24時間以内
 
 ## 8. パフォーマンス最適化
 
-### 8.1 パーティショニング検討
+### 8.1 現在の最適化状況
+- **インデックス最適化**: レポート機能・検索機能に最適化されたインデックス
+- **Prisma ORM**: N+1問題対策・型安全なクエリビルダー活用
+- **適切な JOIN**: ReportControllerでのパフォーマンス重視設計
+- **ページング**: AdminListでの効率的なページング実装
+- **キャッシュ**: React Context による適切な状態管理とメモ化
+
+### 8.2 将来の最適化検討
 ```sql
--- 大量データ対応（将来的に検討）
 -- 月単位でのパーティショニング
 CREATE TABLE time_entries_2025_01 PARTITION OF time_entries
 FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
-```
 
-### 8.2 クエリ最適化
-```sql
--- よく使用される集計クエリの最適化
+-- 集計処理最適化用インデックス
 CREATE INDEX idx_time_entries_aggregate ON time_entries(
     user_id, date, task_id, category_id
 ) INCLUDE (start_time, end_time);
@@ -368,14 +392,10 @@ CREATE INDEX idx_time_entries_monthly ON time_entries(
 ) WHERE deleted_at IS NULL;
 ```
 
-### 8.3 統計情報更新
-```sql
--- 定期的な統計情報更新（Supabaseで自動実行）
-ANALYZE time_entries;
-ANALYZE tasks;
-ANALYZE projects;
-ANALYZE categories;
-```
+### 8.3 運用・監視
+- **統計情報更新**: Supabaseによる自動実行
+- **バキューム処理**: Supabase自動バキューム
+- **クエリパフォーマンス監視**: Supabaseダッシュボード活用
 
 ## 9. 運用・監視
 
@@ -415,7 +435,7 @@ CREATE INDEX idx_projects_metadata ON projects USING gin(metadata);
 
 ### 10.2 ログ・監査対応
 ```sql
--- 監査ログテーブル（将来対応）
+-- 監査ログテーブル
 CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_name VARCHAR(50) NOT NULL,
@@ -426,3 +446,32 @@ CREATE TABLE audit_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
+
+## 11. データベース設計サマリー
+
+### 11.1 基盤設計
+- **データベース**: Supabase PostgreSQL
+- **ORM**: Prisma - 全テーブル・リレーション・制約対応
+- **タイムゾーン**: Asia/Tokyo 設定
+
+### 11.2 テーブル設計
+1. **users**: ユーザー管理・論理削除対応
+2. **projects**: プロジェクト管理・カラー情報・論理削除
+3. **categories**: 分類管理・15色対応・論理削除
+4. **tasks**: タスク管理・プロジェクト関連・論理削除
+5. **time_entries**: 工数エントリ・15分制約・重複防止制約
+
+### 11.3 制約・インデックス
+- **15分刻み制約**: UI連動対応
+- **時間重複防止**: UNIQUE制約・トリガー
+- **論理削除対応**: 全テーブル deleted_at カラム
+- **パフォーマンス**: レポート機能最適化インデックス
+
+### 11.4 将来実装予定機能
+- **RLS (Row Level Security)**: Supabase Auth実装時に有効化予定
+- **監査ログ**: 運用要件に応じて実装検討
+- **パーティショニング**: 大量データ対応時の最適化検討
+
+### 11.5 拡張性・監視
+- **メタデータ拡張**: JSONB カラムによる柔軟な拡張対応
+- **統計・監視**: Supabase ダッシュボード活用

@@ -39,120 +39,112 @@
 ## 2. フロントエンド設計（React）
 
 ### 2.1 技術スタック
-- **Framework**: React 18+
+- **Framework**: React 18+ + TypeScript
 - **UI Library**: React Bootstrap 5
-- **Drag & Drop**: react-beautiful-dnd
-- **Calendar**: react-big-calendar or カスタム実装（週表示形式）
+- **Routing**: React Router DOM
+- **Calendar**: react-big-calendar
 - **State Management**: React Context API + useReducer
-- **HTTP Client**: Axios
+- **HTTP Client**: カスタムapiClient
 - **Testing**: Jest + React Testing Library
 - **Type Safety**: TypeScript
+- **Styling**: CSS Modules + Bootstrap Classes
 
 ### 2.2 ディレクトリ構成
 ```
-front/
-├── public/
+front/                          # フロントエンド実装
+├── public/                     # 静的ファイル
 ├── src/
-│   ├── components/           # 共通コンポーネント
-│   │   ├── common/          # 汎用コンポーネント
-│   │   ├── calendar/        # カレンダー関連
-│   │   ├── forms/           # フォーム関連
-│   │   └── layout/          # レイアウト関連
-│   ├── pages/               # ページコンポーネント
-│   │   ├── TimeEntry/       # 工数入力画面
-│   │   ├── Reports/         # 集計・分析画面
-│   │   └── Settings/        # 設定画面
-│   ├── hooks/               # カスタムフック
-│   ├── context/             # Context API
-│   ├── services/            # API通信
-│   ├── types/               # TypeScript型定義
-│   ├── utils/               # ユーティリティ
-│   └── __tests__/           # テスト
+│   ├── components/            # 共通コンポーネント
+│   │   ├── common/           # 汎用コンポーネント
+│   │   ├── calendar/         # カレンダー関連
+│   │   ├── forms/            # フォーム関連
+│   │   ├── layout/           # レイアウト関連
+│   │   ├── AdminList.tsx     # 汎用一覧コンポーネント
+│   │   ├── Navigation.tsx    # ナビゲーション
+│   │   ├── Calendar.tsx      # メインカレンダー
+│   │   ├── *CreateModal.tsx  # 作成モーダル群
+│   │   ├── *DetailModal.tsx  # 詳細モーダル群
+│   │   ├── *List.tsx         # 一覧コンポーネント群
+│   │   └── *Selector.tsx     # セレクター群
+│   ├── pages/                # ページコンポーネント
+│   │   ├── UserSelection.tsx # ユーザー選択画面
+│   │   ├── TimeEntry.tsx     # 工数入力画面
+│   │   ├── Reports.tsx       # 集計・分析画面
+│   │   └── Admin.tsx         # 管理画面
+│   ├── context/              # Context API
+│   ├── services/             # API通信
+│   ├── types/                # TypeScript型定義
+│   ├── styles/               # スタイルシート
+│   ├── utils/                # ユーティリティ
+│   └── __tests__/            # テスト
 ```
 
 ### 2.3 主要コンポーネント設計
 
 #### 2.3.1 CalendarComponent
+**ファイル**: `front/src/components/Calendar.tsx`
 ```typescript
-interface CalendarProps {
-  entries: TimeEntry[];
-  onEntryCreate: (entry: CreateTimeEntryRequest) => void;
-  onEntryUpdate: (id: string, entry: UpdateTimeEntryRequest) => void;
-  onEntryDelete: (id: string) => void;
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-}
-
-const CalendarComponent: React.FC<CalendarProps> = ({...}) => {
-  // 15分刻みの時間スロット生成
-  // ドラッグ&ドロップ処理
-  // 時間重複バリデーション
-};
+// react-big-calendar を使用したメインカレンダーコンポーネント
+// 機能：
+// - 15分刻みの時間スロット生成
+// - ドラッグ&ドロップ処理（作成・移動・リサイズ）
+// - 時間重複バリデーション・確認ダイアログ
+// - 週表示形式・24時間対応
+// - プロジェクト・分類色による視覚的表現
 ```
 
 #### 2.3.2 TaskSelector（2段階選択コンポーネント）
-```typescript
-interface TaskSelectorProps {
-  projects: Project[];
-  tasks: Task[];
-  selectedProject?: Project;
-  selectedTask?: Task;
-  onProjectSelect: (project: Project) => void;
-  onTaskSelect: (task: Task) => void;
-}
+**ファイル**: 
+- `front/src/components/ProjectSelector.tsx`
+- `front/src/components/TaskSelector.tsx` 
+- `front/src/components/CategorySelector.tsx`
 
-interface CategorySelectorProps {
-  categories: Category[];
-  selectedCategory?: Category;
-  onCategorySelect: (category: Category) => void;
-}
+```typescript
+// 機能：
+// - プロジェクト選択 → タスク選択の2段階選択UI
+// - 分類選択（プロジェクト横断）
+// - カラーピッカー・色表示機能
+// - バリデーション・エラーハンドリング完備
+// - TypeScript による型安全性確保
 ```
 
 #### 2.3.3 ReportsComponent
+**ファイル**: `front/src/pages/Reports.tsx`
 ```typescript
-interface ReportsProps {
-  period: ReportPeriod;
-  groupBy: 'project' | 'category' | 'project-category';
-  selectedProjects?: Project[];
-  selectedCategories?: Category[];
-  onPeriodChange: (period: ReportPeriod) => void;
-  onGroupByChange: (groupBy: 'project' | 'category' | 'project-category') => void;
-  onProjectSelectionChange: (projects: Project[]) => void;
-  onCategorySelectionChange: (categories: Category[]) => void;
-}
+// 機能：
+// - 4種類のレポート（プロジェクト別・分類別・日別・詳細）
+// - タブ式UI による直感的な操作
+// - 期間選択（今月・先月・過去30日・カスタム期間）
+// - ユーザー選択機能（動的ユーザー切り替え）
+// - カラーバッジによる視覚的表現
+// - ローディング状態・エラーハンドリング
 ```
 
 ### 2.4 状態管理設計
+**ファイル**: `front/src/context/AppContext.tsx`
 ```typescript
-// Context定義
-interface AppState {
-  user: User | null;
-  projects: Project[];
-  categories: Category[];
-  tasks: Task[];
-  timeEntries: TimeEntry[];
-  loading: boolean;
-  error: string | null;
-}
+// React Context API + useReducer による状態管理
+// - AppProvider による全体状態管理
+// - TypeScript による型安全な Action/State 定義
+// - ユーザー選択状態・エラー状態・ローディング状態管理
+// - 各コンポーネントから useAppContext フック でアクセス
+// - プロジェクト・分類・タスク・工数データの統合管理
+```
 
-interface AppContextType {
-  state: AppState;
-  dispatch: React.Dispatch<AppAction>;
-}
+#### 2.4.1 管理画面コンポーネント群
+```typescript
+// AdminList.tsx - 汎用一覧コンポーネント
+// - 検索・ソート・フィルタリング・ページング機能
+// - Generic型による型安全な再利用可能設計
+// - カスタムレンダリング対応
 
-// Action定義
-type AppAction = 
-  | { type: 'SET_USER'; payload: User }
-  | { type: 'SET_PROJECTS'; payload: Project[] }
-  | { type: 'SET_CATEGORIES'; payload: Category[] }
-  | { type: 'SET_TASKS'; payload: Task[] }
-  | { type: 'ADD_TIME_ENTRY'; payload: TimeEntry }
-  | { type: 'UPDATE_TIME_ENTRY'; payload: { id: string; entry: TimeEntry } }
-  | { type: 'DELETE_TIME_ENTRY'; payload: string }
-  | { type: 'SELECT_PROJECT'; payload: Project | null }
-  | { type: 'SELECT_CATEGORY'; payload: Category | null }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string | null };
+// *CreateModal.tsx 群 - 統一的な作成モーダル
+// - ProjectCreateModal, CategoryCreateModal, TaskCreateModal, UserCreateModal
+// - カラーピッカー・プレビュー・バリデーション機能完備
+
+// *DetailModal.tsx 群 - 統一的な詳細・削除モーダル  
+// - 2段階確認削除・カード化レイアウト
+// - エラーハンドリング・ローディング状態完備
 ```
 
 ## 3. バックエンド設計（Clean Architecture）
@@ -160,36 +152,39 @@ type AppAction =
 ### 3.1 技術スタック
 - **Framework**: Express.js + TypeScript
 - **ORM**: Prisma (Supabase対応)
-- **Validation**: Joi
+- **Security**: Helmet + CORS
+- **Architecture**: Clean Architecture
+- **Validation**: カスタムバリデーション
 - **Testing**: Jest + Supertest
 - **API Documentation**: Swagger/OpenAPI
 - **Logging**: Winston
 
 ### 3.2 ディレクトリ構成
 ```
-server/
+server/                          # バックエンド実装
 ├── src/
 │   ├── domain/              # Domain Layer
-│   │   ├── entities/        # エンティティ
-│   │   ├── repositories/    # リポジトリインターface
-│   │   └── value-objects/   # 値オブジェクト
+│   │   ├── entities/        # エンティティ（User, Project, Category, Task, TimeEntry）
+│   │   ├── repositories/    # リポジトリインターフェース
+│   │   └── value-objects/   # 値オブジェクト（TimePeriod等）
 │   ├── application/         # Application Layer
 │   │   ├── use-cases/       # ユースケース
 │   │   ├── services/        # アプリケーションサービス
 │   │   └── interfaces/      # インターフェース定義
 │   ├── infrastructure/      # Infrastructure Layer
-│   │   ├── database/        # データベースアクセス
+│   │   ├── database/        # データベースアクセス（Prisma実装）
 │   │   ├── repositories/    # リポジトリ実装
-│   │   └── external/        # 外部API
+│   │   └── external/        # 外部API対応ディレクトリ
 │   ├── presentation/        # Presentation Layer
 │   │   ├── controllers/     # コントローラー
-│   │   ├── middlewares/     # ミドルウェア
-│   │   ├── routes/          # ルート定義
+│   │   ├── middlewares/     # ミドルウェア（CORS, Helmet等）
+│   │   ├── routes/          # ルート定義（RESTful API）
 │   │   └── validators/      # バリデーション
 │   ├── shared/              # 共通機能
 │   │   ├── utils/           # ユーティリティ
-│   │   ├── constants/       # 定数
+│   │   ├── constants/       # 定数（時間制約等）
 │   │   └── types/           # 型定義
+│   ├── scripts/             # データベースシード等
 │   └── __tests__/           # テスト
 ```
 
@@ -414,33 +409,37 @@ export class TimeOverlapError extends Error {
 
 #### 3.5.1 RESTful API エンドポイント
 ```
-GET    /api/users                     # ユーザー一覧
-POST   /api/users                     # ユーザー作成
+GET    /health                          # ヘルスチェック
 
-GET    /api/projects                  # プロジェクト一覧
-POST   /api/projects                  # プロジェクト作成
-PUT    /api/projects/:id              # プロジェクト更新
-DELETE /api/projects/:id              # プロジェクト削除
+GET    /api/users                       # ユーザー一覧
+POST   /api/users                       # ユーザー作成
+DELETE /api/users/:id                   # ユーザー削除
 
-GET    /api/categories                # 分類一覧
-POST   /api/categories                # 分類作成
-PUT    /api/categories/:id            # 分類更新
-DELETE /api/categories/:id            # 分類削除
+GET    /api/projects                    # プロジェクト一覧（ユーザー指定）
+POST   /api/projects                    # プロジェクト作成
+DELETE /api/projects/:id                # プロジェクト削除
 
-GET    /api/tasks                     # タスク一覧
-POST   /api/tasks                     # タスク作成
-PUT    /api/tasks/:id                 # タスク更新
-DELETE /api/tasks/:id                 # タスク削除
+GET    /api/categories                  # 分類一覧（ユーザー指定）
+POST   /api/categories                  # 分類作成
+DELETE /api/categories/:id              # 分類削除
 
-GET    /api/time-entries              # 工数一覧
-POST   /api/time-entries              # 工数作成
-PUT    /api/time-entries/:id          # 工数更新
-DELETE /api/time-entries/:id          # 工数削除
+GET    /api/tasks                       # タスク一覧（プロジェクト・ユーザー指定）
+POST   /api/tasks                       # タスク作成
+DELETE /api/tasks/:id                   # タスク削除
 
-GET    /api/reports/projects          # プロジェクト別集計
-GET    /api/reports/categories        # 分類別集計
-GET    /api/reports/users             # ユーザー別集計
-GET    /api/reports/project-category  # プロジェクト×分類クロス集計
+GET    /api/time-entries                # 工数一覧（ユーザー・期間指定）
+POST   /api/time-entries                # 工数作成
+PUT    /api/time-entries/:id            # 工数更新
+DELETE /api/time-entries/:id            # 工数削除
+
+GET    /api/reports/projects/:userId    # プロジェクト別集計
+GET    /api/reports/categories/:userId  # 分類別集計
+GET    /api/reports/daily/:userId       # 日別集計
+GET    /api/reports/details/:userId     # 工数詳細レポート
+
+PUT    /api/projects/:id                # プロジェクト更新
+PUT    /api/categories/:id              # 分類更新
+PUT    /api/tasks/:id                   # タスク更新
 ```
 
 ## 4. TDD実装アプローチ
@@ -592,7 +591,10 @@ TimeEntryItem.displayName = 'TimeEntryItem';
 ## 7. 開発・運用
 
 ### 7.1 開発環境
-- **Local**: Docker Compose
+- **Local**: Node.js + npm開発サーバー
+- **Database**: Supabase PostgreSQL
+- **Frontend**: React 18+ + TypeScript + React Bootstrap
+- **Backend**: Node.js/Express + TypeScript + Prisma ORM
 - **Staging**: Vercel + Supabase
 - **Production**: Vercel + Supabase
 
@@ -600,3 +602,36 @@ TimeEntryItem.displayName = 'TimeEntryItem';
 - **Testing**: GitHub Actions
 - **Linting**: ESLint + Prettier
 - **Deployment**: 自動デプロイ
+
+## 8. 機能仕様
+
+### 8.1 基盤技術
+- **アーキテクチャ**: Clean Architecture 4層構造
+- **フロントエンド**: React 18 + TypeScript + React Bootstrap + React Router
+- **バックエンド**: Node.js/Express + TypeScript + Prisma + Supabase
+- **セキュリティ**: CORS + Helmet ミドルウェア
+
+### 8.2 コア機能
+1. **ユーザー管理**: 作成・選択・一覧・削除・動的ユーザー切り替え
+2. **プロジェクト管理**: 作成・一覧・削除・カラー管理・検索ソート
+3. **分類管理**: 作成・一覧・削除・15色カラー・プロジェクト横断対応
+4. **タスク管理**: 作成・一覧・削除・プロジェクト連動・説明改行表示
+5. **工数入力**: カレンダーUI・ドラッグ&ドロップ・15分刻み・重複防止
+6. **レポート機能**: 4種類集計・期間指定・タイムゾーン対応
+
+### 8.3 UI/UX機能
+- **統合ナビゲーション**: React Bootstrap Navbar + アクティブ表示
+- **管理画面**: タブ式統合管理・検索ソートフィルタリング
+- **モーダル群**: 作成・詳細・削除の統一UI・カラーピッカー対応
+- **レスポンシブ**: React Bootstrap によるモバイル対応
+
+### 8.4 認証・セキュリティ
+- **ログイン機能**: Supabase Auth・RLS対応
+- **権限管理**: Role-Based Access Control
+
+### 8.5 データ活用・運用
+- **エクスポート機能**: CSV/Excel/JSON形式データ出力
+- **グラフ表示**: Chart.js/Recharts によるビジュアル表示
+- **通知機能**: 工数入力リマインダー・メール通知
+- **テスト**: Jest + Supertest + React Testing Library
+- **CI/CD**: GitHub Actions + 自動デプロイ
