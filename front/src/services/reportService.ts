@@ -174,24 +174,32 @@ export class ReportService {
     }
   }
 
+  // タイムゾーンを考慮した日付文字列変換
+  private formatDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   // 期間の便利メソッド
   getThisMonthPeriod(): { startDate: string; endDate: string } {
     const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    const startDate = this.formatDateString(new Date(now.getFullYear(), now.getMonth(), 1));
+    const endDate = this.formatDateString(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     return { startDate, endDate };
   }
 
   getLastMonthPeriod(): { startDate: string; endDate: string } {
     const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0];
-    const endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+    const startDate = this.formatDateString(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const endDate = this.formatDateString(new Date(now.getFullYear(), now.getMonth(), 0));
     return { startDate, endDate };
   }
 
   getLast30DaysPeriod(): { startDate: string; endDate: string } {
-    const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = this.formatDateString(new Date());
+    const startDate = this.formatDateString(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
     return { startDate, endDate };
   }
 }
