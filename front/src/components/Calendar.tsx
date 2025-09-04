@@ -490,6 +490,47 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     }
   }, [selectedEvent, user.id, onTimeEntryDelete, handleModalClose]);
 
+  // モーダルでの工数更新処理
+  const handleModalUpdate = useCallback(async (updatedTimeEntry: TimeEntry) => {
+    if (!selectedEvent) return;
+    
+    try {
+      // イベントリストを更新
+      setEvents(prevEvents => 
+        prevEvents.map(event => {
+          if (event.id === updatedTimeEntry.id) {
+            return {
+              ...event,
+              start: updatedTimeEntry.startTime,
+              end: updatedTimeEntry.endTime,
+              title: `${event.resource.task.name} (${event.resource.category.name})`,
+              resource: {
+                ...event.resource,
+                timeEntry: updatedTimeEntry
+              }
+            };
+          }
+          return event;
+        })
+      );
+      
+      // selectedEventも更新
+      setSelectedEvent(prev => 
+        prev ? {
+          ...prev,
+          start: updatedTimeEntry.startTime,
+          end: updatedTimeEntry.endTime,
+          resource: {
+            ...prev.resource,
+            timeEntry: updatedTimeEntry
+          }
+        } : null
+      );
+    } catch (error) {
+      console.error('Failed to update calendar event:', error);
+    }
+  }, [selectedEvent]);
+
 
   // カレンダーのメッセージ設定（日本語）
   const messages = useMemo(() => ({
@@ -605,6 +646,7 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
         category={selectedEvent?.resource.category || null}
         project={selectedEvent?.resource.project || null}
         onDelete={handleModalDelete}
+        onUpdate={handleModalUpdate}
         loading={loading}
       />
     </div>

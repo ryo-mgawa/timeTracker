@@ -360,7 +360,7 @@ export class TimeEntryController {
           return;
         }
 
-        updatedTimeEntry = updatedTimeEntry.updatePeriod(newStartTime, newEndTime);
+        updatedTimeEntry = updatedTimeEntry.updateTime(newStartTime, newEndTime);
       }
 
       // メモ更新
