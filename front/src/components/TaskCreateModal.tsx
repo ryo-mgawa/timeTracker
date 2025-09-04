@@ -10,6 +10,7 @@ interface TaskCreateModalProps {
   readonly onHide: () => void;
   readonly userId: string;
   readonly onSuccess?: () => void;
+  readonly initialProjectId?: string; // フィルタリング状態に応じた初期プロジェクトID
 }
 
 // フォームデータ型
@@ -23,7 +24,8 @@ const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   show,
   onHide,
   userId,
-  onSuccess
+  onSuccess,
+  initialProjectId
 }) => {
   const [formData, setFormData] = useState<TaskFormData>({
     name: '',
@@ -45,11 +47,15 @@ const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       const projectsData = await projectService.getProjectsByUserId(userId);
       setProjects(projectsData as Project[]);
       
-      // 最初のプロジェクトを自動選択
+      // プロジェクト初期値設定
       if (projectsData.length > 0 && !formData.projectId) {
+        const initialProjectToSet = initialProjectId !== undefined 
+          ? initialProjectId  // フィルタリング指定時はその値（空文字含む）
+          : projectsData[0].id;  // 未指定時は最初のプロジェクト
+        
         setFormData(prev => ({
           ...prev,
-          projectId: projectsData[0].id
+          projectId: initialProjectToSet
         }));
       }
     } catch (error) {
@@ -58,7 +64,7 @@ const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     } finally {
       setProjectsLoading(false);
     }
-  }, [userId, formData.projectId]);
+  }, [userId, formData.projectId, initialProjectId]);
 
   // モーダル表示時にプロジェクト一覧を取得
   useEffect(() => {

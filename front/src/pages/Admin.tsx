@@ -28,6 +28,9 @@ const Admin: React.FC = () => {
   
   // リフレッシュトリガー（作成・編集・削除後にリストを更新するため）
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  
+  // タスクのプロジェクトフィルタ状態
+  const [taskSelectedProjectId, setTaskSelectedProjectId] = useState<string>('');
 
   // ユーザー一覧取得
   const fetchUsers = async (): Promise<void> => {
@@ -91,6 +94,11 @@ const Admin: React.FC = () => {
       fetchUsers();
     }
     console.log('作成が完了しました');
+  };
+
+  // タスクのプロジェクトフィルタ変更ハンドラー
+  const handleTaskProjectFilterChange = (projectId: string): void => {
+    setTaskSelectedProjectId(projectId);
   };
 
   return (
@@ -243,6 +251,7 @@ const Admin: React.FC = () => {
                   userId={selectedUserId}
                   onEdit={() => {/* TODO: タスク編集機能 */}}
                   refreshTrigger={refreshTrigger}
+                  onProjectFilterChange={handleTaskProjectFilterChange}
                 />
               )}
               {activeTab === 'users' && (
@@ -276,6 +285,7 @@ const Admin: React.FC = () => {
         onHide={() => setShowTaskModal(false)}
         userId={selectedUserId}
         onSuccess={handleCreateSuccess}
+        initialProjectId={taskSelectedProjectId}
       />
 
       <UserCreateModal

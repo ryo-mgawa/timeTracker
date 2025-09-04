@@ -11,12 +11,14 @@ interface TaskListProps {
   readonly userId: string;
   readonly onEdit?: (task: Task) => void;
   readonly refreshTrigger?: number;
+  readonly onProjectFilterChange?: (projectId: string) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
   userId,
   onEdit,
-  refreshTrigger = 0
+  refreshTrigger = 0,
+  onProjectFilterChange
 }) => {
   const [tasks, setTasks] = useState<readonly Task[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
@@ -116,8 +118,10 @@ const TaskList: React.FC<TaskListProps> = ({
 
   // プロジェクト選択ハンドラー
   const handleProjectChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>): void => {
-    setSelectedProjectId(event.target.value);
-  }, []);
+    const newProjectId = event.target.value;
+    setSelectedProjectId(newProjectId);
+    onProjectFilterChange?.(newProjectId);
+  }, [onProjectFilterChange]);
 
   // プロジェクト名を取得
   const getProjectName = (projectId: string): string => {
