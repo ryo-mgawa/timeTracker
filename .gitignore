@@ -2,3 +2,5 @@ node_modules
 settings.local.json
 front/build/
 dist
+.serena/cache/
+.serena/memories/
