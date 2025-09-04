@@ -149,11 +149,27 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     fetchInitialData();
   }, [user?.id]);
 
-  // イベント移動時のハンドラー
+  // 時間重複チェック
+  const hasTimeOverlap = useCallback((newStart: Date, newEnd: Date, excludeEventId?: string): boolean => {
+    return events.some(event => {
+      if (excludeEventId && event.id === excludeEventId) return false;
+      
+      const eventStart = event.start;
+      const eventEnd = event.end;
+      
+      return (
+        (newStart >= eventStart && newStart < eventEnd) ||
+        (newEnd > eventStart && newEnd <= eventEnd) ||
+        (newStart <= eventStart && newEnd >= eventEnd)
+      );
+    });
+  }, [events]);
+
+  // イベント移動時のハンドラー（改良版）
   const onEventDrop = useCallback(async ({ event, start, end }: any) => {
     // アーリーリターン - 必要な情報がない場合
-    if (!event?.resource?.timeEntry || !selectedTask || !selectedCategory) {
-      console.error('必要な情報が不足しています');
+    if (!event?.resource?.timeEntry) {
+      console.error('工数エントリの情報がありません');
       return;
     }
 
@@ -162,8 +178,36 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     const snappedEnd = snapToQuarter(end);
 
     if (!isValidQuarterTime(snappedStart) || !isValidQuarterTime(snappedEnd)) {
-      alert('時刻は15分刻み（0, 15, 30, 45分）で入力してください');
+      alert('⏰ 時刻は15分刻み（0, 15, 30, 45分）で入力してください\n自動的に最寄りの15分刻みに調整されます。');
       return;
+    }
+
+    // 時間重複チェック
+    if (hasTimeOverlap(snappedStart, snappedEnd, event.id)) {
+      alert('⚠️ この時間帯には既に他の工数エントリが存在します\n重複しない時間帯に移動してください。');
+      return;
+    }
+
+    // 元の時間と比較して大幅な変更の場合は確認
+    const originalStart = event.resource.timeEntry.startTime;
+    const originalEnd = event.resource.timeEntry.endTime;
+    const timeDiff = Math.abs(snappedStart.getTime() - originalStart.getTime());
+    const durationDiff = Math.abs((snappedEnd.getTime() - snappedStart.getTime()) - (originalEnd.getTime() - originalStart.getTime()));
+    
+    // 1時間以上の移動または30分以上の時間変更の場合は確認
+    if (timeDiff > 60 * 60 * 1000 || durationDiff > 30 * 60 * 1000) {
+      const originalDuration = Math.round((originalEnd.getTime() - originalStart.getTime()) / (15 * 60 * 1000)) * 15;
+      const newDuration = Math.round((snappedEnd.getTime() - snappedStart.getTime()) / (15 * 60 * 1000)) * 15;
+      
+      const confirmMessage = `🔄 工数エントリを大幅に変更します：\n\n` +
+        `📋 タスク: ${event.title}\n` +
+        `📅 元の時間: ${originalStart.toLocaleString('ja-JP')} - ${originalEnd.toLocaleString('ja-JP')} (${originalDuration}分)\n` +
+        `📅 新しい時間: ${snappedStart.toLocaleString('ja-JP')} - ${snappedEnd.toLocaleString('ja-JP')} (${newDuration}分)\n\n` +
+        `この変更を保存しますか？`;
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
     }
 
     try {
@@ -199,19 +243,24 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       // コールバック実行
       onTimeEntryUpdate?.(updatedTimeEntry);
       
+      // 成功メッセージ（短時間表示）
+      const duration = Math.round((snappedEnd.getTime() - snappedStart.getTime()) / (15 * 60 * 1000)) * 15;
+      console.log(`✅ 工数エントリを更新しました: ${event.title} (${duration}分)`);
+      
     } catch (error) {
       console.error('工数エントリの更新に失敗しました:', error);
-      alert('工数エントリの更新に失敗しました');
+      alert('❌ 工数エントリの更新に失敗しました\n\n' + 
+            (error instanceof Error ? error.message : '不明なエラーが発生しました'));
     } finally {
       setLoading(false);
     }
-  }, [events, user.id, selectedTask, selectedCategory, onTimeEntryUpdate]);
+  }, [events, user.id, onTimeEntryUpdate, hasTimeOverlap]);
 
-  // イベントリサイズ時のハンドラー
+  // イベントリサイズ時のハンドラー（改良版）
   const onEventResize = useCallback(async ({ event, start, end }: any) => {
     // アーリーリターン - 必要な情報がない場合
     if (!event?.resource?.timeEntry) {
-      console.error('TimeEntryの情報がありません');
+      console.error('工数エントリの情報がありません');
       return;
     }
 
@@ -220,8 +269,45 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     const snappedEnd = snapToQuarter(end);
 
     if (!isValidQuarterTime(snappedStart) || !isValidQuarterTime(snappedEnd)) {
-      alert('時刻は15分刻み（0, 15, 30, 45分）で入力してください');
+      alert('⏰ 時刻は15分刻み（0, 15, 30, 45分）で入力してください\n自動的に最寄りの15分刻みに調整されます。');
       return;
+    }
+
+    // 最小時間チェック（15分未満は不可）
+    const duration = snappedEnd.getTime() - snappedStart.getTime();
+    if (duration < 15 * 60 * 1000) {
+      alert('⚠️ 工数エントリは最低15分以上である必要があります');
+      return;
+    }
+
+    // 時間重複チェック（リサイズ対象を除く）
+    if (hasTimeOverlap(snappedStart, snappedEnd, event.id)) {
+      alert('⚠️ この時間帯には既に他の工数エントリが存在します\n重複しない範囲でリサイズしてください。');
+      return;
+    }
+
+    // 元の時間と比較して大幅な変更の場合は確認
+    const originalStart = event.resource.timeEntry.startTime;
+    const originalEnd = event.resource.timeEntry.endTime;
+    const originalDuration = Math.round((originalEnd.getTime() - originalStart.getTime()) / (15 * 60 * 1000)) * 15;
+    const newDuration = Math.round(duration / (15 * 60 * 1000)) * 15;
+    const durationChange = Math.abs(newDuration - originalDuration);
+    
+    // 1時間以上の時間変更の場合は確認
+    if (durationChange >= 60) {
+      const isIncrease = newDuration > originalDuration;
+      const changeType = isIncrease ? '延長' : '短縮';
+      
+      const confirmMessage = `📏 工数時間を大幅に${changeType}します：\n\n` +
+        `📋 タスク: ${event.title}\n` +
+        `⏱️ 元の時間: ${originalDuration}分\n` +
+        `⏱️ 新しい時間: ${newDuration}分\n` +
+        `📊 変更: ${isIncrease ? '+' : ''}${newDuration - originalDuration}分\n\n` +
+        `この変更を保存しますか？`;
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
     }
 
     try {
@@ -257,19 +343,27 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       // コールバック実行
       onTimeEntryUpdate?.(updatedTimeEntry);
       
+      // 成功メッセージ（短時間表示）
+      console.log(`✅ 工数エントリをリサイズしました: ${event.title} (${newDuration}分)`);
+      
     } catch (error) {
       console.error('工数エントリの更新に失敗しました:', error);
-      alert('工数エントリの更新に失敗しました');
+      alert('❌ 工数エントリの更新に失敗しました\n\n' + 
+            (error instanceof Error ? error.message : '不明なエラーが発生しました'));
     } finally {
       setLoading(false);
     }
-  }, [events, user.id, onTimeEntryUpdate]);
+  }, [events, user.id, onTimeEntryUpdate, hasTimeOverlap]);
 
-  // 新しいイベント作成時のハンドラー
+  // 新しいイベント作成時のハンドラー（改良版）
   const onSelectSlot = useCallback(async ({ start, end }: { start: Date; end: Date }) => {
     // アーリーリターン - 必要な情報がない場合
     if (!selectedTask || !selectedCategory) {
-      alert('プロジェクト→タスクと分類を選択してください');
+      alert('📝 プロジェクト→タスクと分類を選択してください\n\n' +
+            '右上の選択エリアで以下を選択してください：\n' +
+            '1. プロジェクトを選択\n' +
+            '2. タスクを選択\n' +
+            '3. 分類を選択');
       return;
     }
 
@@ -278,8 +372,37 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
     const snappedEnd = snapToQuarter(end);
 
     if (!isValidQuarterTime(snappedStart) || !isValidQuarterTime(snappedEnd)) {
-      alert('時刻は15分刻み（0, 15, 30, 45分）で入力してください');
+      alert('⏰ 時刻は15分刻み（0, 15, 30, 45分）で入力してください\n自動的に最寄りの15分刻みに調整されます。');
       return;
+    }
+
+    // 最小時間チェック（15分未満は不可）
+    const duration = snappedEnd.getTime() - snappedStart.getTime();
+    if (duration < 15 * 60 * 1000) {
+      alert('⚠️ 工数エントリは最低15分以上である必要があります\nより長い時間範囲を選択してください。');
+      return;
+    }
+
+    // 時間重複チェック
+    if (hasTimeOverlap(snappedStart, snappedEnd)) {
+      alert('⚠️ この時間帯には既に他の工数エントリが存在します\n\n' +
+            '重複しない時間帯を選択するか、既存のエントリを移動してください。');
+      return;
+    }
+
+    // 長時間のエントリの場合は確認
+    const durationMinutes = Math.round(duration / (15 * 60 * 1000)) * 15;
+    if (durationMinutes >= 240) { // 4時間以上
+      const confirmMessage = `⏰ 長時間の工数エントリを作成します：\n\n` +
+        `📋 タスク: ${selectedTask.name}\n` +
+        `🏷️ 分類: ${selectedCategory.name}\n` +
+        `⏱️ 時間: ${snappedStart.toLocaleString('ja-JP')} - ${snappedEnd.toLocaleString('ja-JP')}\n` +
+        `⏲️ 合計: ${durationMinutes}分\n\n` +
+        `この工数エントリを作成しますか？`;
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
     }
 
     try {
@@ -316,13 +439,17 @@ const TimeTrackingCalendar: React.FC<TimeTrackingCalendarProps> = ({
       // コールバック実行
       onTimeEntryCreate?.(newTimeEntry);
       
+      // 成功メッセージ（短時間表示）
+      console.log(`✅ 工数エントリを作成しました: ${selectedTask.name} (${durationMinutes}分)`);
+      
     } catch (error) {
       console.error('工数エントリの作成に失敗しました:', error);
-      alert('工数エントリの作成に失敗しました');
+      alert('❌ 工数エントリの作成に失敗しました\n\n' + 
+            (error instanceof Error ? error.message : '不明なエラーが発生しました'));
     } finally {
       setLoading(false);
     }
-  }, [selectedTask, selectedCategory, user.id, onTimeEntryCreate]);
+  }, [selectedTask, selectedCategory, user.id, onTimeEntryCreate, hasTimeOverlap]);
 
   // イベント選択時のハンドラー（詳細モーダル表示）
   const onSelectEvent = useCallback((event: CalendarEvent) => {
