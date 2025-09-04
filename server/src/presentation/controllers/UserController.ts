@@ -153,6 +153,42 @@ export class UserController {
       res.status(400).json(errorResponse);
     }
   }
+
+  // ユーザー削除
+  async deleteUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      // アーリーリターン - IDが未指定
+      if (!id) {
+        const errorResponse: ApiResponse<never> = {
+          success: false,
+          error: 'ユーザーIDが指定されていません'
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      await this.userRepository.delete(id);
+
+      const response: ApiResponse<never> = {
+        success: true,
+        message: 'ユーザーを削除しました'
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'ユーザーの削除に失敗しました';
+      const errorResponse: ApiResponse<never> = {
+        success: false,
+        error: errorMessage
+      };
+
+      res.status(400).json(errorResponse);
+    }
+  }
 }
 
 // インスタンス化してエクスポート

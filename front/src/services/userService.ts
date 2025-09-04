@@ -66,6 +66,21 @@ export class UserService {
     }
   }
 
+  // ユーザーを削除
+  async deleteUser(id: UserId): Promise<void> {
+    // アーリーリターン - IDの検証
+    if (!id) {
+      throw new Error('ユーザーIDが指定されていません');
+    }
+
+    try {
+      await apiClient.delete(`${this.ENDPOINT}/${id}`);
+    } catch (error) {
+      console.error(`Failed to delete user ${id}:`, error);
+      throw new Error('ユーザーの削除に失敗しました');
+    }
+  }
+
   // APIレスポンスをUserエンティティに変換（単体）
   private mapToUser(apiUser: UserApiResponse): User {
     return {
