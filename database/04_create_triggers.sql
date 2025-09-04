@@ -27,11 +27,12 @@ CREATE TRIGGER update_time_entries_updated_at BEFORE UPDATE ON time_entries
 CREATE OR REPLACE FUNCTION check_time_overlap()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- 同じユーザーの同じ時間帯に他のエントリがないかチェック
+    -- 同じユーザーの同じ時間帯に他のエントリがないかチェック（削除されたエントリは除外）
     IF EXISTS (
         SELECT 1 FROM time_entries
         WHERE user_id = NEW.user_id
         AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+        AND deleted_at IS NULL
         AND (
             (NEW.start_time >= start_time AND NEW.start_time < end_time) OR
             (NEW.end_time > start_time AND NEW.end_time <= end_time) OR
