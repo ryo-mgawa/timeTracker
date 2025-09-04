@@ -140,9 +140,12 @@ export class TimeEntry {
 
   // 作業日を取得
   getWorkDate(): Date {
-    return new Date(this.period.startTime.getFullYear(), 
-                   this.period.startTime.getMonth(), 
-                   this.period.startTime.getDate());
+    // UTC時刻をJST（Asia/Tokyo）基準での日付に変換
+    // 例: UTC 2024-09-03 15:30 → JST 2024-09-04 00:30 → workDate: 2024-09-04
+    const jstDateString = this.period.startTime.toLocaleDateString('ja-JP', { 
+      timeZone: 'Asia/Tokyo' 
+    });
+    return new Date(jstDateString);
   }
 
   // 工数時間を取得
