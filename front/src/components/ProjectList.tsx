@@ -146,10 +146,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
           })}
         </span>
       )
-    },
-    {
-      key: 'actions' as const,
-      label: 'アクション'
     }
   ];
 
@@ -161,8 +157,6 @@ const ProjectList: React.FC<ProjectListProps> = ({
         columns={columns}
         loading={loading}
         error={error}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         onItemClick={handleItemClick}
         onRefresh={fetchProjects}
         searchPlaceholder="プロジェクト名で検索..."

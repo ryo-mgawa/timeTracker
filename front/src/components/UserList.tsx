@@ -143,10 +143,6 @@ const UserList: React.FC<UserListProps> = ({
           })}
         </span>
       )
-    },
-    {
-      key: 'actions' as const,
-      label: 'アクション'
     }
   ];
 
@@ -158,8 +154,6 @@ const UserList: React.FC<UserListProps> = ({
         columns={columns}
         loading={loading}
         error={error}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         onItemClick={handleItemClick}
         onRefresh={fetchUsers}
         searchPlaceholder="ユーザー名やメールで検索..."

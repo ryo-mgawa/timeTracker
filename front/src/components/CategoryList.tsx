@@ -145,10 +145,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
           })}
         </span>
       )
-    },
-    {
-      key: 'actions' as const,
-      label: 'アクション'
     }
   ];
 
@@ -160,8 +156,6 @@ const CategoryList: React.FC<CategoryListProps> = ({
         columns={columns}
         loading={loading}
         error={error}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         onItemClick={handleItemClick}
         onRefresh={fetchCategories}
         searchPlaceholder="分類名で検索..."
