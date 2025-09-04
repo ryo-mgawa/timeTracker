@@ -5,6 +5,7 @@ import { AppProvider } from 'context/AppContext';
 import UserSelection from 'pages/UserSelection';
 import TimeEntry from 'pages/TimeEntry';
 import Reports from 'pages/Reports';
+import Admin from 'pages/Admin';
 import Navigation from 'components/Navigation';
 
 const App: React.FC = () => {
@@ -20,6 +21,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<UserSelection />} />
                 <Route path="/time-entry/:userId" element={<TimeEntry />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Container>

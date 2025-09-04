@@ -47,6 +47,14 @@ const Navigation: React.FC = () => {
             >
               レポート
             </Nav.Link>
+            
+            <Nav.Link 
+              as={Link} 
+              to="/admin" 
+              className={isActive('/admin') ? 'active fw-bold' : ''}
+            >
+              管理画面
+            </Nav.Link>
           </Nav>
           
           {/* ユーザー情報表示エリア（将来の機能用） */}
