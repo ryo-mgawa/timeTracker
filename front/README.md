@@ -225,32 +225,61 @@ export const CalendarPage: React.FC = () => {
 - 状態管理とイベントハンドリング
 
 ```typescript
-// UserList.tsx例
-export const UserList: React.FC<UserListProps> = ({ onEdit }) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+// TaskList.tsx例（最新実装）
+export const TaskList: React.FC<TaskListProps> = ({ 
+  userId, 
+  onEdit, 
+  refreshTrigger = 0,
+  onProjectFilterChange  // 新機能：プロジェクトフィルター変更通知
+}) => {
+  const [tasks, setTasks] = useState<readonly Task[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await userService.getUsers();
-      setUsers(data);
-    } catch (error) {
-      // エラーハンドリング
-    } finally {
-      setLoading(false);
+  // プロジェクトフィルタリング機能
+  const handleProjectChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>): void => {
+    const newProjectId = event.target.value;
+    setSelectedProjectId(newProjectId);
+    onProjectFilterChange?.(newProjectId); // 親コンポーネントに通知
+  }, [onProjectFilterChange]);
+
+  const columns = [
+    {
+      key: 'name' as keyof Task,
+      label: 'タスク名',
+      render: (task: Task) => (
+        <div>
+          <div className="fw-bold">{task.name}</div>
+          {task.description && (
+            // 改行表示対応機能
+            <small className="text-muted" style={{whiteSpace: 'pre-line'}}>
+              {task.description}
+            </small>
+          )}
+        </div>
+      )
     }
-  }, []);
+  ];
 
   return (
-    <AdminList
-      title="ユーザー一覧"
-      items={users}
-      columns={columns}
-      loading={loading}
-      onEdit={onEdit}
-      onRefresh={fetchUsers}
-    />
+    <>
+      {/* プロジェクトフィルター UI */}
+      <div className="mb-3">
+        <Form.Select value={selectedProjectId} onChange={handleProjectChange}>
+          <option value="">全てのプロジェクト</option>
+          {projects.map(project => (
+            <option key={project.id} value={project.id}>{project.name}</option>
+          ))}
+        </Form.Select>
+      </div>
+
+      <AdminList
+        title="タスク一覧"
+        items={filteredTasks()}
+        columns={columns}
+        loading={loading}
+        onRefresh={fetchTasks}
+      />
+    </>
   );
 };
 ```
@@ -582,6 +611,40 @@ npm install
 ```bash
 # Node.jsヒープサイズ増加
 NODE_OPTIONS="--max-old-space-size=8192" npm start
+```
+
+## 🆕 最新実装機能（2025年9月）
+
+### UI/UX改善
+- **タスク説明の改行表示機能**
+  - CSS `white-space: pre-line` プロパティを使用
+  - TaskList.tsx 内でのテキストフォーマット改良
+  - ユーザビリティ大幅向上
+
+- **プロジェクト連動タスク作成機能**
+  - プロジェクトフィルタリング状態に応じた新規タスク作成
+  - Admin.tsx ↔ TaskList.tsx ↔ TaskCreateModal.tsx の Props Chain実装
+  - `initialProjectId` による柔軟な初期値設定
+  - React コンポーネント間通信の最適化
+
+### 技術実装のポイント
+```typescript
+// Props Chain パターンの実装例
+interface TaskCreateModalProps {
+  readonly initialProjectId?: string; // フィルタリング状態連携
+}
+
+// CSS による改行表示
+<small className="text-muted" style={{whiteSpace: 'pre-line'}}>
+  {task.description}
+</small>
+
+// useCallback によるパフォーマンス最適化
+const handleProjectChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>): void => {
+  const newProjectId = event.target.value;
+  setSelectedProjectId(newProjectId);
+  onProjectFilterChange?.(newProjectId);
+}, [onProjectFilterChange]);
 ```
 
 ## 🔮 今後の拡張予定
