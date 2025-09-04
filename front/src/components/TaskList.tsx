@@ -65,22 +65,24 @@ const TaskList: React.FC<TaskListProps> = ({
     fetchTasks();
   }, [fetchProjects, fetchTasks, refreshTrigger]);
 
-  // タスク削除（taskServiceにdeleteTaskメソッドがあると仮定）
+  // タスク削除
   const handleDelete = useCallback(async (task: Task): Promise<void> => {
     try {
       setLoading(true);
-      // Note: taskServiceにdeleteTaskメソッドが実装されている前提
-      // await taskService.deleteTask(task.userId, task.id);
+      setError('');
       
-      // 暫定的に未実装のメッセージを表示
-      setError('タスクの削除機能は現在開発中です');
+      // タスクを削除
+      await taskService.deleteTask(task.userId, task.id);
+      
+      // タスク一覧を更新
+      await fetchTasks();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'タスクの削除に失敗しました';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchTasks]);
 
   // 編集ハンドラー
   const handleEdit = useCallback((task: Task): void => {

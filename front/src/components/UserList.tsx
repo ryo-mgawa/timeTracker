@@ -42,22 +42,24 @@ const UserList: React.FC<UserListProps> = ({
     fetchUsers();
   }, [fetchUsers, refreshTrigger]);
 
-  // ユーザー削除（userServiceにdeleteUserメソッドがあると仮定）
+  // ユーザー削除
   const handleDelete = useCallback(async (user: User): Promise<void> => {
     try {
       setLoading(true);
-      // Note: userServiceにdeleteUserメソッドが実装されている前提
-      // await userService.deleteUser(user.id);
+      setError('');
       
-      // 暫定的に未実装のメッセージを表示
-      setError('ユーザーの削除機能は現在開発中です');
+      // ユーザーを削除
+      await userService.deleteUser(user.id);
+      
+      // ユーザー一覧を更新
+      await fetchUsers();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'ユーザーの削除に失敗しました';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUsers]);
 
   // 編集ハンドラー
   const handleEdit = useCallback((user: User): void => {
