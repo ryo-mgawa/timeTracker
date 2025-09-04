@@ -220,8 +220,12 @@ function AdminList<T extends ListItem>({
                           }}
                         >
                           {column.label}
-                          {column.sortable && column.key !== 'actions' && sortColumn === column.key && (
-                            <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          {column.sortable && column.key !== 'actions' && (
+                            <i className={`fas ${
+                              sortColumn === column.key 
+                                ? `fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} text-primary`
+                                : 'fa-sort text-muted'
+                            } ms-1`}></i>
                           )}
                         </th>
                       ))}
